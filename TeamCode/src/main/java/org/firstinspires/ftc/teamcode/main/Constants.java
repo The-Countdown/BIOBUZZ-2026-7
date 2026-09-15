@@ -23,13 +23,10 @@ public class Constants {
             BLUE,
             RED
         }
-        // Red
-        public static double goalFarXRed = 80.0;
-        public static double goalFarYRed = 70.0;
 
         public static Pose2D ORIGIN = new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
         public static double GRAVITY = 9.811;
-        public static double GOAL_HEIGHT = 1.016;
+        public static double GOAL_HEIGHT = 0.0; // In meters
     }
 
     @Configurable
@@ -149,7 +146,7 @@ public class Constants {
         public static double[] TURRET_INTERPOLATION_ANGLES = {-180,-90, 0, 90, 180};
         public static double[] TURRET_INTERPOLATION_POSITIONS = {0.9517, 0.7226, 0.4985, 0.2755, 0.0559};
         public static double SPEED_FACTOR = 0.0003;
-        public static int FLYWHEEL_MAX_VELOCITY = 2700;
+        public static int FLYWHEEL_MAX_VELOCITY = 0;
         public static double[] FLYWHEEL_SPEED_TABLE = {0};
         public static double[] FLYWHEEL_SPEED_TABLE_DISTANCES = {0};
         public static int FLYWHEEL_SPINUP_MS = 0;

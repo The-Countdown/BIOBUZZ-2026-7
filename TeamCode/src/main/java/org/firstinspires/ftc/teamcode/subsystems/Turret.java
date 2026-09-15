@@ -50,10 +50,10 @@ public class Turret extends RobotContainer.HardwareDevices {
 
     public void update(boolean teleop) {
         Status.flywheelToggleButton.update(Status.flywheelToggle);
-        robotContainer.turret.hood.setPos(HelperFunctions.clamp(robotContainer.turret.flywheel.interpolateByDistance(HelperFunctions.disToGoal(), false), Constants.Turret.HOOD_PRESETS[0], Constants.Turret.HOOD_PRESETS[Constants.Turret.HOOD_PRESETS.length-1]));
+        robotContainer.turret.hood.setPos(HelperFunctions.clamp(tableInterpolate(Constants.Turret.HOOD_TABLE_DISTANCES, Constants.Turret.HOOD_PRESETS, HelperFunctions.disToGoal()), Constants.Turret.HOOD_PRESETS[0], Constants.Turret.HOOD_PRESETS[Constants.Turret.HOOD_PRESETS.length-1]));
 
         if (Status.flywheelToggle) {
-            flywheel.targetVelocity = robotContainer.turret.flywheel.interpolateByDistance(HelperFunctions.disToGoal(), true) - (goalOrientedVelocityX * Constants.Turret.FLYWHEEL_POWER_VELOCITY_MULTIPLIER);
+            flywheel.targetVelocity = tableInterpolate(Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES, Constants.Turret.FLYWHEEL_SPEED_TABLE, HelperFunctions.disToGoal()) - (goalOrientedVelocityX * Constants.Turret.FLYWHEEL_POWER_VELOCITY_MULTIPLIER);
         } else {
             flywheel.targetVelocity = 0;
         }
@@ -131,11 +131,9 @@ public class Turret extends RobotContainer.HardwareDevices {
                  manualTurretPos -= robotContainer.gamepadEx2.rightStickX() != 0 ? (Constants.Turret.SPEED_FACTOR * robotContainer.CURRENT_LOOP_TIME_MS) * Math.pow(robotContainer.gamepadEx2.rightStickX(), 3) : 0;
                  manualTurretPos = HelperFunctions.clamp(manualTurretPos, Constants.Turret.MIN_SERVO, Constants.Turret.MAX_SERVO);
                  robotContainer.turret.setTargetPosition(manualTurretPos);
-             } else if (Status.manualControl) {
-             } else {
+             } else if (!Status.manualControl) {
                  robotContainer.turret.pointAtGoal();
              }
-
         } else {
             robotContainer.turret.pointAtGoal();
         }
@@ -288,69 +286,7 @@ public class Turret extends RobotContainer.HardwareDevices {
     public class Flywheel {
         public double targetVelocity = 0;
 
-        public double interpolateByDistance(double disToGoal, boolean flywheel){
-            if (flywheel) {
-                double lowerPoint = Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES[0];
-                int lowerPointIndex = 0;
-                double higherPoint = Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES[Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES.length-1];
-                int higherPointIndex = Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES.length-1;
-                double currentDistance;
-                for (int i = Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES.length-2; i>0;i--){
-                    currentDistance = Constants.Turret.FLYWHEEL_SPEED_TABLE_DISTANCES[i];
-                    if(currentDistance > disToGoal){
-                        if (currentDistance < higherPoint) {
-                            higherPoint = currentDistance;
-                            higherPointIndex = i;
-                        }
-                    }else if (currentDistance < disToGoal){
-                        if (currentDistance >= lowerPoint) {
-                            lowerPoint = currentDistance;
-                            lowerPointIndex = i;
-                        }
-                    }else if (currentDistance == disToGoal){
-                        return Constants.Turret.FLYWHEEL_SPEED_TABLE[i];
-                    }
-                }
-                double lowerSpeed = Constants.Turret.FLYWHEEL_SPEED_TABLE[lowerPointIndex];
-                double higherSpeed = Constants.Turret.FLYWHEEL_SPEED_TABLE[higherPointIndex];
-
-                return HelperFunctions.interpolate(lowerSpeed, higherSpeed, (disToGoal-lowerPoint)/(higherPoint-lowerPoint));
-            } else {
-                double lowerPoint = Constants.Turret.HOOD_TABLE_DISTANCES[0];
-                int lowerPointIndex = 0;
-                double higherPoint = Constants.Turret.HOOD_TABLE_DISTANCES[Constants.Turret.HOOD_TABLE_DISTANCES.length-1];
-                int higherPointIndex = Constants.Turret.HOOD_TABLE_DISTANCES.length-1;
-                double currentDistance;
-
-                if (disToGoal > higherPoint){
-                    return Constants.Turret.HOOD_PRESETS[higherPointIndex];
-                } else if (disToGoal < lowerPoint) {
-                    return Constants.Turret.HOOD_PRESETS[lowerPointIndex];
-                }
-
-                for (int i = Constants.Turret.HOOD_TABLE_DISTANCES.length-2; i>0;i--){
-                    currentDistance = Constants.Turret.HOOD_TABLE_DISTANCES[i];
-                    if(currentDistance > disToGoal){
-                        if (currentDistance < higherPoint) {
-                            higherPoint = currentDistance;
-                            higherPointIndex = i;
-                        }
-                    }else if (currentDistance < disToGoal){
-                        if (currentDistance >= lowerPoint) {
-                            lowerPoint = currentDistance;
-                            lowerPointIndex = i;
-                        }
-                    }else if (currentDistance == disToGoal){
-                        return Constants.Turret.HOOD_PRESETS[i];
-                    }
-                }
-                double lowerPos = Constants.Turret.HOOD_PRESETS[lowerPointIndex];
-                double higherPos = Constants.Turret.HOOD_PRESETS[higherPointIndex];
-
-                return HelperFunctions.interpolate(lowerPos, higherPos, (disToGoal-lowerPoint)/(higherPoint-lowerPoint));
-            }
-        }
-
+        @Deprecated // Only use/update this for personal challenge
         public void updateLaunchValues(double distToGoal){
             double verticalVel = Math.sqrt(2 * Constants.Game.GRAVITY * (Constants.Turret.DESIRED_MAX_HEIGHT - Constants.Turret.FLYWHEEL_HEIGHT));
             double estimatedTime = (verticalVel + Math.sqrt(verticalVel - 2 * (Constants.Game.GRAVITY) * (Constants.Game.GOAL_HEIGHT - Constants.Turret.FLYWHEEL_HEIGHT))) / Constants.Game.GRAVITY;

@@ -87,9 +87,6 @@ public class BetterDcMotor extends Thread {
         return this.power;
     }
 
-//    public double getVelocity() {
-//        return this.velocity;
-//    }
     public double getVelocity() {
         return motor.getVelocity();
     }

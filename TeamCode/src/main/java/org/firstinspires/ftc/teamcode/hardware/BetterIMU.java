@@ -8,10 +8,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 import org.firstinspires.ftc.teamcode.main.Constants;
 import org.firstinspires.ftc.teamcode.main.RobotContainer;
 
-// enum SensorMode {
-//     IMU
-// }
-
 public class BetterIMU {
     // private SensorMode currentMode;
     private AdafruitBNO055IMU imu;
@@ -24,8 +20,6 @@ public class BetterIMU {
 
         this.calibration = new CalibrationData();
 
-        // super(deviceClient, true); // IDK to use true or false
-        // setMode(SensorMode.IMU);
     }
 
     // Return the yaw in degrees
@@ -53,12 +47,4 @@ public class BetterIMU {
         return imu.readCalibrationData();
     }
 
-    // public synchronized void setMode(SensorMode mode) {
-    //     this.currentMode = mode;
-
-    //     switch (mode) {
-    //         case IMU:
-    //             write8(BNO055IMU.Register.OPR_MODE, 0x07);
-    //     }
-    // }
 }
