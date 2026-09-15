@@ -28,7 +28,6 @@ public class Status {
     public static boolean isDrivingActive = false;
     public static boolean fieldOriented = false;
 
-    public static boolean intakeGamepadable = false;
     public static final GamepadWrapper.ButtonReader flywheelToggleButton = new GamepadWrapper.ButtonReader();
     public static boolean flywheelAtTargetSpeed = true;
     public static boolean flywheelToggle = false;
