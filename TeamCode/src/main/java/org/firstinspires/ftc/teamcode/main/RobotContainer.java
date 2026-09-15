@@ -29,23 +29,20 @@ import org.firstinspires.ftc.teamcode.hardware.BetterDcMotor;
 import org.firstinspires.ftc.teamcode.hardware.BetterIMU;
 import org.firstinspires.ftc.teamcode.hardware.BetterServo;
 import org.firstinspires.ftc.teamcode.other.PositionProvider;
-import org.firstinspires.ftc.teamcode.subsystems.Door;
+import org.firstinspires.ftc.teamcode.subsystems.Lever;
 import org.firstinspires.ftc.teamcode.subsystems.IndicatorLighting;
 import org.firstinspires.ftc.teamcode.other.LocalizationUpdater;
 import org.firstinspires.ftc.teamcode.subsystems.Drivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
-import org.firstinspires.ftc.teamcode.subsystems.Tilt;
+import org.firstinspires.ftc.teamcode.subsystems.Brakes;
 import org.firstinspires.ftc.teamcode.util.DelayedActionManager;
-import org.firstinspires.ftc.teamcode.util.FlywheelPDF;
 import org.firstinspires.ftc.teamcode.util.GamepadWrapper;
-import org.firstinspires.ftc.teamcode.util.HelperFunctions;
 import org.firstinspires.ftc.teamcode.hardware.LinkedMotors;
 import org.firstinspires.ftc.teamcode.hardware.LinkedServos;
 import org.firstinspires.ftc.teamcode.util.TelemetryLogger;
 
 import java.io.File;
-import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -87,8 +84,8 @@ public class RobotContainer {
     public IndicatorLighting.Group allIndicatorLights;
     public Turret turret;
     public Intake intake;
-    public Tilt tilt;
-    public Door door;
+    public Brakes brakes;
+    public Lever lever;
     public double controlHubVoltage;
     public double expansionHubVoltage;
     public double controlHubCurrent;
@@ -128,15 +125,15 @@ public class RobotContainer {
         public static BetterServo turretServoLeader;
         public static BetterServo turretServoFollower;
         public static BetterServo hoodServo;
-        public static BetterServo doorServo;
+        public static BetterServo leverServo;
 
         // Intake
         public static BetterDcMotor intakeMotorLeader;
         public static BetterDcMotor intakeMotorFollower;
 
-        // Tilt
-        public static BetterServo tiltServoLeader;
-        public static BetterServo tiltServoFollower;
+        // Brakes
+        public static BetterServo brakeServoLeader;
+        public static BetterServo brakeServoFollower;
 
     }
 
@@ -206,11 +203,11 @@ public class RobotContainer {
         HardwareDevices.flywheelMotorLeader = new BetterDcMotor(hardwareMap.get(DcMotorImplEx.class, "flywheelMotorLeader"), 0);
         HardwareDevices.flywheelMotorFollower = new BetterDcMotor(hardwareMap.get(DcMotorImplEx.class, "flywheelMotorFollower"), 0);
 
-        HardwareDevices.tiltServoLeader = new BetterServo(getHardwareDevice(ServoImplEx.class, "tiltServoLeader"), Constants.Robot.SERVO_UPDATE_TIME);
-        HardwareDevices.tiltServoFollower = new BetterServo(getHardwareDevice(ServoImplEx.class, "tiltServoFollower"), Constants.Robot.SERVO_UPDATE_TIME);
-        LinkedServos tiltServos = new LinkedServos(HardwareDevices.tiltServoLeader, HardwareDevices.tiltServoFollower);
+        HardwareDevices.brakeServoLeader = new BetterServo(getHardwareDevice(ServoImplEx.class, "brakesServoLeader"), Constants.Robot.SERVO_UPDATE_TIME);
+        HardwareDevices.brakeServoFollower = new BetterServo(getHardwareDevice(ServoImplEx.class, "brakesServoFollower"), Constants.Robot.SERVO_UPDATE_TIME);
+        LinkedServos brakeServos = new LinkedServos(HardwareDevices.brakeServoLeader, HardwareDevices.brakeServoFollower);
 
-        HardwareDevices.doorServo = new BetterServo(getHardwareDevice(ServoImplEx.class, "doorServo"), Constants.Robot.SERVO_UPDATE_TIME);
+        HardwareDevices.leverServo = new BetterServo(getHardwareDevice(ServoImplEx.class, "leverServo"), Constants.Robot.SERVO_UPDATE_TIME);
 
         LinkedMotors flywheelMotors = new LinkedMotors(HardwareDevices.flywheelMotorLeader, HardwareDevices.flywheelMotorFollower);
         HardwareDevices.flywheelMotorFollower.setDirection(DcMotorImplEx.Direction.REVERSE);
@@ -222,10 +219,10 @@ public class RobotContainer {
         turret = new Turret(this, flywheelMotors, HardwareDevices.hoodServo, turretServos);
         HardwareDevices.intakeMotorLeader.setDirection(DcMotor.Direction.REVERSE);
         intake = new Intake(this, intakeMotors);
-        tilt = new Tilt(this, tiltServos);
-        door = new Door(this, HardwareDevices.doorServo);
+        brakes = new Brakes(this, brakeServos);
+        lever = new Lever(this, HardwareDevices.leverServo);
 
-        drivetrain = new Drivetrain(this, this.hardwareMap, HardwareDevices.leftFront, HardwareDevices.rightFront, HardwareDevices.leftBack, HardwareDevices.rightBack);
+        drivetrain = new Drivetrain(this, HardwareDevices.leftFront, HardwareDevices.rightFront, HardwareDevices.leftBack, HardwareDevices.rightBack);
 
         registerLoopTimer("teleOp");
         registerLoopTimer("pinpointUpdater");
@@ -261,7 +258,6 @@ public class RobotContainer {
     }
 
     public void initLoop() {
-        tilt.setPosition(Constants.Tilt.MIN + (Math.random() / 1000));
         panelsTelemetry.debug("Status: Initialized");
         panelsTelemetry.debug("Alliance: " + Status.alliance.toString());
         panelsTelemetry.update(telemetry);
@@ -288,10 +284,6 @@ public class RobotContainer {
         Status.startingPose = Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.CM, Constants.Robot.STARTING_X, Constants.Robot.STARTING_Y, AngleUnit.DEGREES, Constants.Robot.STARTING_HEADING) :
                               Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.CM, Constants.Robot.STARTING_X, -Constants.Robot.STARTING_Y, AngleUnit.DEGREES, -Constants.Robot.STARTING_HEADING) :
                               new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
-
-        Status.cornerResetPose = Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.CM, Constants.Robot.CORNER_X, Constants.Robot.CORNER_Y, AngleUnit.DEGREES, Constants.Robot.CORNER_ANGLE) :
-                                 Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.CM, Constants.Robot.CORNER_X, -Constants.Robot.CORNER_Y, AngleUnit.DEGREES, -Constants.Robot.CORNER_ANGLE) :
-                                 new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
 
 
 
@@ -336,9 +328,9 @@ public class RobotContainer {
         }
         delayedActionManager.update();
         allIndicatorLights.lightsUpdate();
-        door.update(teleop);
+        lever.update(teleop);
         turret.update(teleop);
-        tilt.update(teleop);
+        brakes.update(teleop);
         intake.update(teleop);
 
         controlHubVoltage = getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
@@ -643,72 +635,72 @@ public class RobotContainer {
             // Stuff not in competition mode.
 
             // Get current and voltage for telemetry
-            controlHubVoltage = getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
-            expansionHubVoltage = getVoltage(Constants.Robot.EXPANSION_HUB_INDEX);
-            controlHubCurrent = getCurrent(Constants.Robot.CONTROL_HUB_INDEX);
-            expansionHubCurrent = getCurrent(Constants.Robot.EXPANSION_HUB_INDEX);
-            addDataLog("Control Hub Voltage", controlHubVoltage + " V", true);
-            addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", true);
-            addDataLog("Control Hub Current", controlHubCurrent + " A", true);
-            addDataLog("Expansion Hub Current", expansionHubCurrent + " A", true);
-            addDataLog("Switch Amps", switchCurrent + " A", true);
-            telemetry.addLine();
-            addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, true);
-            addDataLog("Flywheel Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), true);
-            addDataLog("Flywheel Main Motor Current mA", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Flywheel Secondary Motor Current mA", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Flywheel2 Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), true);
-            telemetry.addLine();
-            addDataLog("Turret Current Angle", turret.getPositionDegrees(), true);
-            addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), true);
-            telemetry.addLine();
-            addDataLog("Tilt position", tilt.getPosition(), true);
-            addDataLog("Tilt angle", tilt.getPositionDegrees(), true);
-            telemetry.addLine();
-            addDataLog("Robot Heading", Status.currentHeading + "°", true);
-            addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), true);
-            addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), true);
-            addDataLog("Distance to Goal", HelperFunctions.disToGoal(), true);
-            telemetry.addLine();
-            addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", true);
-            addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", true);
-            telemetry.addLine();
-            addDataLog("Goal Position", Status.goalPose, true);
-            addDataLog("Start Position", Status.startingPose, true);
-            telemetry.addLine();
-            addDataLog("Field Oriented", Status.fieldOriented, true);
-            addDataLog("Intake Toggle", Status.intakeGamepadable, true);
-
-            // Test Power draw
-            addDataLog("Motor Intake 1", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Intake 2", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Flywheel 1", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Flywheel 2", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Drive LF", HardwareDevices.leftFront.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Drive RF", HardwareDevices.rightFront.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Drive LB", HardwareDevices.leftBack.getCurrent(CurrentUnit.MILLIAMPS), true);
-            addDataLog("Motor Drive RB", HardwareDevices.rightBack.getCurrent(CurrentUnit.MILLIAMPS), true);
-
-            addDataLog("Servo Hood", HardwareDevices.hoodServo.getPosition(), true);
-            addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), true);
-            addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), true);
-            addDataLog("Tilt Servo Leader", HardwareDevices.tiltServoLeader.getPosition(), true);
-            addDataLog("Tilt Servo Follower", HardwareDevices.tiltServoFollower.getPosition(), true);
-
-            telemetry.addLine();
-            displayEventTelemetry();
-            commitLoopData();
-
-            panelsTelemetry.addData("Flywheel Error", turret.flywheelError);
-            panelsTelemetry.addData("Flywheel Target", turret.flywheel.targetVelocity);
-            panelsTelemetry.addData("Flywheel Velocity", turret.flywheel.getFlywheelVelocity());
-            panelsTelemetry.addData("Door Open", Status.doorOpen);
-            panelsTelemetry.addData("New Intake Power", intake.getNewPower());
-
-            panelsTelemetry.addData("Current", switchCurrent + " A");
-            panelsTelemetry.addData("Intake Current", intake.getCurrent() + "A");
-            panelsTelemetry.addData("Drive Current", drivetrain.getCurrent() + "A");
-            panelsTelemetry.addData("Flywheel Current", turret.flywheel.getCurrent() + "A");
+//                controlHubVoltage = getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
+//                expansionHubVoltage = getVoltage(Constants.Robot.EXPANSION_HUB_INDEX);
+//                controlHubCurrent = getCurrent(Constants.Robot.CONTROL_HUB_INDEX);
+//                expansionHubCurrent = getCurrent(Constants.Robot.EXPANSION_HUB_INDEX);
+//                addDataLog("Control Hub Voltage", controlHubVoltage + " V", true);
+//                addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", true);
+//                addDataLog("Control Hub Current", controlHubCurrent + " A", true);
+//                addDataLog("Expansion Hub Current", expansionHubCurrent + " A", true);
+//                addDataLog("Switch Amps", switchCurrent + " A", true);
+//                telemetry.addLine();
+//                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, true);
+//                addDataLog("Flywheel Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), true);
+//                addDataLog("Flywheel Main Motor Current mA", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Flywheel Secondary Motor Current mA", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Flywheel2 Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), true);
+//                telemetry.addLine();
+//                addDataLog("Turret Current Angle", turret.getPositionDegrees(), true);
+//                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), true);
+//                telemetry.addLine();
+//                addDataLog("Brakes position", brakes.getPosition(), true);
+//                addDataLog("Brakes angle", brakes.getPositionDegrees(), true);
+//                telemetry.addLine();
+//                addDataLog("Robot Heading", Status.currentHeading + "°", true);
+//                addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), true);
+//                addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), true);
+//                addDataLog("Distance to Goal", HelperFunctions.disToGoal(), true);
+//                telemetry.addLine();
+//                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", true);
+//                addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", true);
+//                telemetry.addLine();
+//                addDataLog("Goal Position", Status.goalPose, true);
+//                addDataLog("Start Position", Status.startingPose, true);
+//                telemetry.addLine();
+//                addDataLog("Field Oriented", Status.fieldOriented, true);
+//                addDataLog("Intake Toggle", Status.intakeGamepadable, true);
+//
+//                // Test Power draw
+//                addDataLog("Motor Intake 1", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Intake 2", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Flywheel 1", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Flywheel 2", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Drive LF", HardwareDevices.leftFront.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Drive RF", HardwareDevices.rightFront.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Drive LB", HardwareDevices.leftBack.getCurrent(CurrentUnit.MILLIAMPS), true);
+//                addDataLog("Motor Drive RB", HardwareDevices.rightBack.getCurrent(CurrentUnit.MILLIAMPS), true);
+//
+//                addDataLog("Servo Hood", HardwareDevices.hoodServo.getPosition(), true);
+//                addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), true);
+//                addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), true);
+//                addDataLog("Brakes Servo Leader", HardwareDevices.brakesServoLeader.getPosition(), true);
+//                addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), true);
+//
+                telemetry.addLine();
+                displayEventTelemetry();
+                commitLoopData();
+//
+//                panelsTelemetry.addData("Flywheel Error", turret.flywheelError);
+//                panelsTelemetry.addData("Flywheel Target", turret.flywheel.targetVelocity);
+//                panelsTelemetry.addData("Flywheel Velocity", turret.flywheel.getFlywheelVelocity());
+//                panelsTelemetry.addData("Lever Open", Status.leverOpen);
+//                panelsTelemetry.addData("New Intake Power", intake.getNewPower());
+//
+//                panelsTelemetry.addData("Current", switchCurrent + " A");
+//                panelsTelemetry.addData("Intake Current", intake.getCurrent() + "A");
+//                panelsTelemetry.addData("Drive Current", drivetrain.getCurrent() + "A");
+//                panelsTelemetry.addData("Flywheel Current", turret.flywheel.getCurrent() + "A");
         }
 
         panelsTelemetry.update(telemetry);

@@ -1,12 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.pedropathing.geometry.Pose;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.BetterServo;
 import org.firstinspires.ftc.teamcode.main.Constants;
 import org.firstinspires.ftc.teamcode.main.RobotContainer;
@@ -56,7 +53,6 @@ public class Turret extends RobotContainer.HardwareDevices {
         robotContainer.turret.hood.setPos(HelperFunctions.clamp(robotContainer.turret.flywheel.interpolateByDistance(HelperFunctions.disToGoal(), false), Constants.Turret.HOOD_PRESETS[0], Constants.Turret.HOOD_PRESETS[Constants.Turret.HOOD_PRESETS.length-1]));
 
         if (Status.flywheelToggle) {
-//            flywheel.targetVelocity = Math.min(Status.flywheelToggleButton.holdDuration() * Constants.Turret.FLYWHEEL_CURVE, robotContainer.turret.flywheel.interpolateByDistance(HelperFunctions.disToGoal()));
             flywheel.targetVelocity = robotContainer.turret.flywheel.interpolateByDistance(HelperFunctions.disToGoal(), true) - (goalOrientedVelocityX * Constants.Turret.FLYWHEEL_POWER_VELOCITY_MULTIPLIER);
         } else {
             flywheel.targetVelocity = 0;
@@ -80,39 +76,6 @@ public class Turret extends RobotContainer.HardwareDevices {
         goalOrientedVelocityX = (pinpoint.getVelX(DistanceUnit.INCH) * Math.cos(Math.toRadians(goalAngle))) - (pinpoint.getVelY(DistanceUnit.INCH) * Math.sin(Math.toRadians(goalAngle)));
         goalOrientedVelocityY = (pinpoint.getVelX(DistanceUnit.INCH) * Math.sin(Math.toRadians(goalAngle))) + (pinpoint.getVelY(DistanceUnit.INCH) * Math.cos(Math.toRadians(goalAngle)));
 
-        Pose2D farGoalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, Constants.Game.goalFarXBlue, Constants.Game.goalFarYBlue, AngleUnit.DEGREES, 45) : new Pose2D(DistanceUnit.INCH, Constants.Game.goalFarXRed, Constants.Game.goalFarYRed, AngleUnit.DEGREES, -45);
-        Pose2D closeOpposingAllianceGoalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, Constants.Game.goalOpposingXBlue, Constants.Game.goalOpposingYBlue, AngleUnit.DEGREES, 45) : new Pose2D(DistanceUnit.INCH, Constants.Game.goalOpposingXRed, Constants.Game.goalOpposingYRed, AngleUnit.DEGREES, -45);
-        Pose2D normalGoalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, Constants.Game.goalXBlue, Constants.Game.goalYBlue, AngleUnit.DEGREES, 45) : new Pose2D(DistanceUnit.INCH, Constants.Game.goalXRed, Constants.Game.goalYRed, AngleUnit.DEGREES, -45);
-        Pose2D wallGoalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, Constants.Game.goalWallXBlue, Constants.Game.goalWallYBlue, AngleUnit.DEGREES, 45) : new Pose2D(DistanceUnit.INCH, Constants.Game.goalWallXRed, Constants.Game.goalWallYRed, AngleUnit.DEGREES, -45);
-        Pose2D closeGoalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, Constants.Game.closeGoalXBlue, Constants.Game.closeGoalYBlue, AngleUnit.DEGREES, 45) : new Pose2D(DistanceUnit.INCH, Constants.Game.closeGoalXRed, Constants.Game.closeGoalYRed, AngleUnit.DEGREES, -45);
-
-        // Aiming Differences based on quadrant
-        Status.goalPose = normalGoalPose;
-
-
-        if (Status.currentPose.getX(DistanceUnit.CM) < -50) { // Back
-            Status.goalPose = farGoalPose;
-
-            if (Status.currentPose.getY(DistanceUnit.CM) < 0) { // Back Red
-
-            } else  if (Status.currentPose.getY(DistanceUnit.CM) > 0){ // Back Blue
-
-            }
-        } else if (Status.currentPose.getX(DistanceUnit.CM) > 50) { // Front
-            if (Status.currentPose.getX(DistanceUnit.CM) > 100 ){ // Very Front
-                if (Status.currentPose.getY(DistanceUnit.CM) < -50) { // Front Red
-                    Status.goalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? closeOpposingAllianceGoalPose : closeGoalPose;
-                } else  if (Status.currentPose.getY(DistanceUnit.CM) > 50){ // Front Blue
-                    Status.goalPose = Status.alliance == Constants.Game.ALLIANCE.RED ? closeOpposingAllianceGoalPose : closeGoalPose;
-                } else {
-                    Status.goalPose = wallGoalPose;
-                }
-            } else if (Status.currentPose.getY(DistanceUnit.CM) < -50) { // Front Red
-                Status.goalPose = Status.alliance == Constants.Game.ALLIANCE.BLUE ? closeOpposingAllianceGoalPose : normalGoalPose;
-            } else  if (Status.currentPose.getY(DistanceUnit.CM) > 50){ // Front Blue
-                Status.goalPose = Status.alliance == Constants.Game.ALLIANCE.RED ? closeOpposingAllianceGoalPose : normalGoalPose;
-            }
-        }
 
         if (teleop) {
 
@@ -162,35 +125,6 @@ public class Turret extends RobotContainer.HardwareDevices {
                 Status.flywheelToggle = !Status.flywheelToggle;
             }
 
-            // Automatic turret hood
-//            if (!manualHood){
-//                if (Status.currentPose.getX(DistanceUnit.CM) < -75) {
-//                    robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[2]);
-//                } else if ((Status.currentPose.getX(DistanceUnit.CM) < 20 || Status.currentPose.getY(DistanceUnit.CM) < 20) && Status.alliance == Constants.Game.ALLIANCE.BLUE) {
-//                    robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[1]);
-//                } else if ((Status.currentPose.getX(DistanceUnit.CM) < 20 || Status.currentPose.getY(DistanceUnit.CM) > -20) && Status.alliance == Constants.Game.ALLIANCE.RED) {
-//                    robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[1]);
-//                } else {
-//                    robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[0]);
-//                }
-//            }
-
-//            backFieldButton.update(Status.currentPose.getX(DistanceUnit.CM) < -20);
-//
-//            if (backFieldButton.wasJustPressed()) {
-//                if (Status.alliance == Constants.Game.ALLIANCE.RED) {
-//                    Status.goalPose = new Pose2D(DistanceUnit.INCH, Constants.Game.goalFarX, Constants.Game.goalFarY, AngleUnit.DEGREES, -45);
-//                } else {
-//                    Status.goalPose = new Pose2D(DistanceUnit.INCH, -Constants.Game.goalFarX, Constants.Game.goalFarY, AngleUnit.DEGREES, 45);
-//                }
-//            } else if (backFieldButton.wasJustReleased()) {
-//                if (Status.alliance == Constants.Game.ALLIANCE.RED) {
-//                    Status.goalPose = new Pose2D(DistanceUnit.INCH, 70, 70, AngleUnit.DEGREES, -45);
-//                } else {
-//                    Status.goalPose = new Pose2D(DistanceUnit.INCH, -70, 70, AngleUnit.DEGREES, 45);
-//                }
-//            }
-
             // Turret turn - Right stick X
              if (Status.manualControl && robotContainer.gamepadEx2.rightStickX() != 0) {
                  // Manual turret turning
@@ -204,16 +138,6 @@ public class Turret extends RobotContainer.HardwareDevices {
 
         } else {
             robotContainer.turret.pointAtGoal();
-
-//            if (Status.currentPose.getX(DistanceUnit.CM) < -75) {
-//                robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[2]);
-//            } else if ((Status.currentPose.getX(DistanceUnit.CM) < 20 || Status.currentPose.getY(DistanceUnit.CM) < 20) && Status.alliance == Constants.Game.ALLIANCE.BLUE) {
-//                robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[1]);
-//            } else if ((Status.currentPose.getX(DistanceUnit.CM) < 20 || Status.currentPose.getY(DistanceUnit.CM) > -20) && Status.alliance == Constants.Game.ALLIANCE.RED) {
-//                robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[1]);
-//            } else {
-//                robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[0]);
-//            }
         }
 
         // Only run flywheel if good voltage
@@ -227,10 +151,6 @@ public class Turret extends RobotContainer.HardwareDevices {
     public void setTargetPosition(double position) {
         targetPosition = position;
         turretServos.setPosition(HelperFunctions.clamp(position, Constants.Turret.MIN_SERVO, Constants.Turret.MAX_SERVO));
-    }
-
-    public void setFlywheelPowerModifier(double val){
-        flywheelPowerModifier = val;
     }
 
     public double getTargetPosition(){ return targetPosition;}
@@ -262,7 +182,6 @@ public class Turret extends RobotContainer.HardwareDevices {
          double position = HelperFunctions.clamp(angleToServo(proposedAngle), Constants.Turret.MIN_SERVO, Constants.Turret.MAX_SERVO);
         turretServoLeader.updateSetPosition(position - Constants.Turret.PRESSURE_OFFSET);
         turretServoFollower.updateSetPosition(position + Constants.Turret.PRESSURE_OFFSET);
-//        turretServos.setPosition(0.5);
     }
 
     /**
@@ -368,7 +287,6 @@ public class Turret extends RobotContainer.HardwareDevices {
 
     public class Flywheel {
         public double targetVelocity = 0;
-        public double targetMaxVelocity = 0;
 
         public double interpolateByDistance(double disToGoal, boolean flywheel){
             if (flywheel) {
@@ -449,7 +367,7 @@ public class Turret extends RobotContainer.HardwareDevices {
             }
             double angleToFaceGoal = Math.atan2(yDiff, xDiff);
             double initialVel = Math.sqrt(Math.pow((verticalVel), 2) * Math.pow((horizonalVel), 2));
-            double rpm = initialVel * (2000 / 5.14);
+            double rpm = initialVel * (2000 / 5.14); //TODO: Stephan have fun with your calc IA find that number 2000/5.14 is a random estimate
             targetVelocity = (rpm / 60) * Constants.Robot.MOTOR_TICKS_PER_REVOLUTION;
         }
 

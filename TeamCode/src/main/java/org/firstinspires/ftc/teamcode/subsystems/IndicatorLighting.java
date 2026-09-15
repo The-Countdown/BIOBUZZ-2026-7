@@ -5,7 +5,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.main.Constants;
 import org.firstinspires.ftc.teamcode.main.RobotContainer;
-import org.firstinspires.ftc.teamcode.main.Status;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,6 @@ public class IndicatorLighting {
     public static class Group {
         private final List<Light> lights = new ArrayList<>();
         private final RobotContainer robotContainer;
-        private final ElapsedTime lightTimer = new ElapsedTime();
         private boolean colorSet = false;
 
         public Group(RobotContainer robotContainer) {

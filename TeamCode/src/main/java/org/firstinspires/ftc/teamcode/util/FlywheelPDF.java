@@ -55,19 +55,6 @@ public class FlywheelPDF {
             dropTime = System.currentTimeMillis();
         }
 
-        if (HelperFunctions.disToGoal() > 100) {
-//            s = Math.signum(error)* Math.pow(error, 2) * Constants.Turret.FLYWHEEL_FAR_KS; // This is tuned just like p
-
-            p = Constants.Turret.FLYWHEEL_FAR_KP * error; // proportional to error
-
-            i += error * Constants.Turret.FLYWHEEL_FAR_KI;
-
-            d = Constants.Turret.FLYWHEEL_FAR_KD  * -errorDiff; // this slows the acceleration down
-
-            ff = (Constants.Turret.FLYWHEEL_FAR_KF * targetSpeed) / Constants.Turret.FLYWHEEL_MAX_VELOCITY; // flat addition to the power
-
-            ff += System.currentTimeMillis() - dropTime < 150 ? error * Constants.Turret.FLYWHEEL_FAR_DROP_KP : 0;
-        } else {
 //            s = Math.signum(error)* Math.pow(error, 2) * Constants.Turret.FLYWHEEL_KS; // This is tuned just like p
 
             p = Constants.Turret.FLYWHEEL_KP * error; // proportional to error
@@ -77,9 +64,6 @@ public class FlywheelPDF {
             d = Constants.Turret.FLYWHEEL_KD  * -errorDiff; // this slows the acceleration down
 
             ff = (targetSpeed * Constants.Turret.FLYWHEEL_KF) / Constants.Turret.FLYWHEEL_MAX_VELOCITY; // flat addition to the power
-
-            ff += System.currentTimeMillis() - dropTime < 150 ? error * Constants.Turret.FLYWHEEL_DROP_KP : 0;
-        }
 
 
         pid = (p + i + d) * dt + ff;

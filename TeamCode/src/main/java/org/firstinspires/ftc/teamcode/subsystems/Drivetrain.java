@@ -1,11 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathChain;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -13,9 +7,6 @@ import org.firstinspires.ftc.teamcode.hardware.BetterDcMotor;
 import org.firstinspires.ftc.teamcode.main.Constants;
 import org.firstinspires.ftc.teamcode.main.RobotContainer;
 import org.firstinspires.ftc.teamcode.main.Status;
-import org.firstinspires.ftc.teamcode.pedroPathing.PedroConstants;
-
-import java.util.function.Supplier;
 
 public class Drivetrain {
     private final RobotContainer robotContainer;
@@ -23,36 +14,18 @@ public class Drivetrain {
     private final BetterDcMotor rightFront;
     private final BetterDcMotor leftBack;
     private final BetterDcMotor rightBack;
-    public static Follower follower;
-
-    public static double DISTANCE = 40;
-    private boolean forward = true;
-
-    private Path forwards;
-    private Path backwards;
-
-    public PathChain pathToBase;
-
-    public static Pose startingPose;
-    private boolean driveToBase = false;
     private double lastTime;
     private double[] outputs = {0,0};
     private double[] targets = {0,0};
     private double[] lastOutputs = {0,0};
-    private Supplier<PathChain> pathChain;
 
 
-    public Drivetrain(RobotContainer robotContainer, HardwareMap hardwareMap, BetterDcMotor leftFront, BetterDcMotor rightFront, BetterDcMotor leftBack, BetterDcMotor rightBack) {
+    public Drivetrain(RobotContainer robotContainer, BetterDcMotor leftFront, BetterDcMotor rightFront, BetterDcMotor leftBack, BetterDcMotor rightBack) {
         this.robotContainer = robotContainer;
         this.leftFront = leftFront;
         this.rightFront = rightFront;
         this.leftBack = leftBack;
         this.rightBack = rightBack;
-        follower = PedroConstants.createFollower(hardwareMap);
-
-//        follower.deactivateAllPIDFs();
-//        follower.activateTranslational();
-//        follower.activateHeading();
 
         leftFront.start();
         rightFront.start();
@@ -68,38 +41,14 @@ public class Drivetrain {
              Pose2D resetPose = Status.cornerResetPose;
             RobotContainer.HardwareDevices.pinpoint.setPosition(resetPose);
             RobotContainer.HardwareDevices.betterIMU.setAngle(resetPose.getHeading(AngleUnit.DEGREES));
-        } else if (robotContainer.gamepadEx1.square.wasJustPressed()) {
-            RobotContainer.HardwareDevices.pinpoint.setPosition(Constants.Robot.middleResetPose);
-            RobotContainer.HardwareDevices.betterIMU.setAngle(Constants.Robot.middleResetPose.getHeading(AngleUnit.DEGREES));
         }
 
-//        if (robotContainer.gamepadEx1.triangle.wasJustPressed()) {
-//            RobotContainer.HardwareDevices.pinpoint.setPosition(Status.cornerResetPose);
-//            RobotContainer.HardwareDevices.betterIMU.setAngleOffset(0);
-//            robotContainer.turret.turretAngleOffset = 0;
-//            robotContainer.turret.turretAngleOffsetFar = 0;
-//        }
     }
 
     public void driveJoystickUpdate() {
-//        if (driveToBase) {
-//            follower.update();
-//        }
-//        if (!driveToBase && robotContainer.gamepadEx1.triangle.wasJustPressed()) {
-//            double currentX = RobotContainer.HardwareDevices.pinpoint.getPosX(DistanceUnit.INCH);
-//            double currentY = RobotContainer.HardwareDevices.pinpoint.getPosY(DistanceUnit.INCH);
-//            pathToBase = follower.pathBuilder()
-//                    .addPath(new Path(new BezierLine(new Pose(currentX, currentY), new Pose((72 - 113), (25 - 72)))))
-//                    .setLinearHeadingInterpolation(RobotContainer.HardwareDevices.pinpoint.getHeading(AngleUnit.RADIANS), Math.toRadians(220), 0.4) //end T specifies when the robot should finish turning to endHeading
-//                    .build();
-//
-//            follower.followPath(pathToBase, true);
-//            driveToBase = true;
-//
-//        } else if (driveToBase && robotContainer.gamepadEx1.triangle.wasJustReleased()) {
-//            follower.breakFollowing();
-//            driveToBase = false;
-//        }
+
+        if (Status.parkingBrake){return;}
+
         double current = getCurrent();
         double currentMultiplier = current > 15 ? 14/current : 1;
         double y = joystickScaler(robotContainer.gamepadEx1.leftStickY()) * currentMultiplier;
@@ -168,12 +117,10 @@ public class Drivetrain {
             rightBackPower = (y + x - rx) / denominator;
         }
 
-        if (!driveToBase) {
             leftFront.setPower(leftFrontPower);
             rightFront.setPower(rightFrontPower);
             leftBack.setPower(leftBackPower);
             rightBack.setPower(rightBackPower);
-        }
 
         if (!Status.competitionMode){
             robotContainer.panelsTelemetry.addData("Y Targets", targets[0]);
@@ -194,11 +141,6 @@ public class Drivetrain {
     }
 
     public double joystickRotationScaler(double input) {
-//        if (Math.signum(Constants.Control.JOYSTICK_ROTATION_SCALER_EXPONENT) == -1) {
-//            return 1 / (Math.pow(Math.abs(input), -Constants.Control.JOYSTICK_ROTATION_SCALER_EXPONENT)) * input;
-//        } else {
-//            return Math.pow(Math.abs(input), Constants.Control.JOYSTICK_ROTATION_SCALER_EXPONENT) * input;
-//        }
         return Math.pow(Math.abs(input), Constants.Control.JOYSTICK_ROTATION_SCALER_EXPONENT) * input;
     }
 
