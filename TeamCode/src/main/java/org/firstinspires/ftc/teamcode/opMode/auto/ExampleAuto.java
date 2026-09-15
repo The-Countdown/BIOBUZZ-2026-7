@@ -42,7 +42,7 @@ public class ExampleAuto extends OpMode {
         private final Pose startToScore = poseFactory.of(48, 48, 90);
         private final Pose park = poseFactory.of(72, 48, 90);
 
-    // Actions
+    // Action initialisation
         Runnable exampleAction;
 
     // Path methods
@@ -83,8 +83,8 @@ public class ExampleAuto extends OpMode {
         follower.setPose(startPose); // Sets the starting pose for the robot
         follower.update();
 
-        //Actions
-            exampleAction = new Runnable() {
+        //Action Creation
+            exampleAction = new Runnable() { // These are just some random ones that you could run just to show how you would put function calls in here
                 @Override
                 public void run() {
                     Status.flywheelToggle = true;
