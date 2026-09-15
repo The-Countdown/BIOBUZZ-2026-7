@@ -303,7 +303,7 @@ public class Turret extends RobotContainer.HardwareDevices {
             }
             double angleToFaceGoal = Math.atan2(yDiff, xDiff);
             double initialVel = Math.sqrt(Math.pow((verticalVel), 2) * Math.pow((horizonalVel), 2));
-            double rpm = initialVel * (2000 / 5.14); //TODO: Stephan have fun with your calc IA find that number 2000/5.14 is a random estimate
+            double rpm = initialVel * (5000 / 12.5); //TODO: Stephan have fun with your calc IA find that number 5000/12.5 is an estimate from an online shooter calculator
             targetVelocity = (rpm / 60) * Constants.Robot.MOTOR_TICKS_PER_REVOLUTION;
         }
 

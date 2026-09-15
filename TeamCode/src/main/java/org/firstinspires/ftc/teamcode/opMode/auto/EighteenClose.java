@@ -1,16 +1,9 @@
 
 package org.firstinspires.ftc.teamcode.opMode.auto;
 
-import androidx.appcompat.widget.ThemedSpinnerAdapter;
-
 import com.bylazar.configurables.annotations.Configurable;
-import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.PathChain;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -18,11 +11,20 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+
 import org.firstinspires.ftc.teamcode.main.Constants;
 import org.firstinspires.ftc.teamcode.main.RobotContainer;
 import org.firstinspires.ftc.teamcode.main.Status;
-import org.firstinspires.ftc.teamcode.pedroPathing.PedroConstants;
 import org.firstinspires.ftc.teamcode.util.HelperFunctions;
+
+import static com.pedropathing.api.Paths.*;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.paths.*;
+import com.pedropathing.paths.Path;
+import com.pedropathing.math.Pose;
+import com.pedropathing.paths.curves.bezier.BezierCurve;
+
+import org.firstinspires.ftc.teamcode.pedroPathing.PedroConstants;
 
 @Autonomous(name = "18Close", group = "Autonomous")
 @Configurable // Panels
@@ -84,7 +86,7 @@ public class EighteenClose extends OpMode {
             @Override
             public void run() {
                 Status.flywheelToggle = true;
-                robotContainer.door.close();
+                robotContainer.lever.close();
                 robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[0]);
             }
         };
@@ -92,13 +94,13 @@ public class EighteenClose extends OpMode {
         shoot = new Runnable() {
             @Override
             public void run(){
-                robotContainer.door.open();
+                robotContainer.lever.open();
                 robotContainer.intake.setPower(1.0);
 
-                robotContainer.delayedActionManager.schedule(() -> robotContainer.door.close(), (int) (SHOOTING_TIME * 2.0 / 3.0));
-                robotContainer.delayedActionManager.schedule(() -> robotContainer.door.open(), (int) (SHOOTING_TIME * 5.0 / 6.0));
+                robotContainer.delayedActionManager.schedule(() -> robotContainer.lever.close(), (int) (SHOOTING_TIME * 2.0 / 3.0));
+                robotContainer.delayedActionManager.schedule(() -> robotContainer.lever.open(), (int) (SHOOTING_TIME * 5.0 / 6.0));
 
-                robotContainer.delayedActionManager.schedule(() -> robotContainer.door.close(), (int) (SHOOTING_TIME * 23.0/24.0));
+                robotContainer.delayedActionManager.schedule(() -> robotContainer.lever.close(), (int) (SHOOTING_TIME * 23.0/24.0));
 
                 robotContainer.delayedActionManager.schedule(() -> robotContainer.intake.setPower(0.7), (int) (SHOOTING_TIME));
             }
@@ -147,7 +149,7 @@ public class EighteenClose extends OpMode {
         autonomousPathUpdate(); // Update autonomous state machine
 
         // Update pose for turret
-        Status.currentPose = new Pose2D(DistanceUnit.INCH, follower.getPose().getY() - 72, -(follower.getPose().getX() - 72), AngleUnit.DEGREES, HelperFunctions.normalizeAngle(RobotContainer.HardwareDevices.betterIMU.getAngle()));
+        Status.currentPose = new Pose2D(DistanceUnit.INCH, follower.pose().y() - 72, -(follower.pose().x() - 72), AngleUnit.DEGREES, HelperFunctions.normalizeAngle(RobotContainer.HardwareDevices.betterIMU.getAngle()));
 
         robotContainer.update(false);
 
@@ -157,9 +159,9 @@ public class EighteenClose extends OpMode {
         panelsTelemetry.debug("Path Timer", pathTimer.milliseconds());
         panelsTelemetry.debug("Holding", holding);
         panelsTelemetry.debug("Path State", pathState);
-        panelsTelemetry.debug("X", follower.getPose().getX());
-        panelsTelemetry.debug("Y", follower.getPose().getY());
-        panelsTelemetry.debug("Heading", follower.getPose().getHeading());
+        panelsTelemetry.debug("X", follower.pose().x());
+        panelsTelemetry.debug("Y", follower.pose().y());
+        panelsTelemetry.debug("Heading", follower.pose().heading());
         panelsTelemetry.debug("Current Pose", Status.currentPose);
         panelsTelemetry.update(telemetry);
     }
@@ -169,22 +171,6 @@ public class EighteenClose extends OpMode {
         blackboard.put("Robot Pose", new Pose2D(DistanceUnit.INCH, Status.currentPose.getX(DistanceUnit.INCH), (Status.currentPose.getY(DistanceUnit.INCH) + POSE_OFFSET), AngleUnit.DEGREES, Status.currentPose.getHeading(AngleUnit.DEGREES)));
     }
 
-    private static class Paths {
-        public PathChain
-                BC_SC,
-                SC_TM,
-                TM_G,
-                G_SC,
-                TM_SC,
-                SC_G,
-                G_GC,
-                SC_GC,
-                GC_SC,
-                SC_TL,
-                TL_SC,
-                SC_TH,
-                TH_SC,
-                SC_EC;
         public Pose
                 // Red
                 RED_BEGINNING_CLOSE = new Pose(124.500, 124.500, Math.toRadians(218)),
@@ -198,8 +184,8 @@ public class EighteenClose extends OpMode {
                 RED_TAPE_HIGH = new Pose(122.000, 84.000, Math.toRadians(0)),
                 RED_END_CLOSE = new Pose(103.000, 84.000, Math.toRadians(0)),
 
-            // Blue
-                BLUE_BEGINNING_CLOSE = HelperFunctions.mirror(RED_BEGINNING_CLOSE),
+        // Blue
+        BLUE_BEGINNING_CLOSE = HelperFunctions.mirror(RED_BEGINNING_CLOSE),
                 BLUE_TAPE_MID = HelperFunctions.mirror(RED_TAPE_MID),
                 BLUE_SHOOTING_CLOSE_65 = HelperFunctions.mirror(RED_SHOOTING_CLOSE_65),
                 BLUE_SHOOTING_CLOSE_45 = HelperFunctions.mirror(RED_SHOOTING_CLOSE_45),
@@ -209,6 +195,37 @@ public class EighteenClose extends OpMode {
                 BLUE_TAPE_LOW = HelperFunctions.mirror(RED_TAPE_LOW),
                 BLUE_TAPE_HIGH = HelperFunctions.mirror(RED_TAPE_HIGH),
                 BLUE_END_CLOSE = HelperFunctions.mirror(RED_END_CLOSE);
+        public Path BC_SC(){
+            return new BezierCurve(RED_BEGINNING_CLOSE,RED_SHOOTING_CLOSE_65).linear(RED_BEGINNING_CLOSE,RED_SHOOTING_CLOSE_65);
+        }
+                SC_TM,
+                TM_G,
+                G_SC,
+                TM_SC,
+                SC_G,
+                G_GC,
+                SC_GC,
+                GC_SC,
+                SC_TL,
+                TL_SC,
+                SC_TH,
+                TH_SC,
+                SC_EC;
+
+        private Command autoRoutine() {
+            return sequential(
+                    follow(follower, startToScore()),
+                    // Add mechanism commands here.
+                    follow(follower, park())
+            );
+        }
+
+    private Path startToScore() {
+        return line(startPose, scorePose).linear(startPose, scorePose);
+    }
+    private Path park(){
+        return line(scorePose, parkPose).linear(scorePose, parkPose);
+    }
 
         public Paths(Follower follower) {
             if (Status.alliance == org.firstinspires.ftc.teamcode.main.Constants.Game.ALLIANCE.RED) {
@@ -469,7 +486,6 @@ public class EighteenClose extends OpMode {
                         ).setTangentHeadingInterpolation()
                         .build();
             }
-        }
     }
 
 

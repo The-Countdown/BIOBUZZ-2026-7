@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.util;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -24,7 +24,7 @@ public class HelperFunctions {
     }
 
     public static Pose mirror(Pose point) {
-        return new Pose(Math.abs(point.getX() - 144), point.getY(), Math.PI - point.getHeading());
+        return new Pose(Math.abs(point.x() - 144), point.y(), Math.PI - point.heading());
     }
 
     public static double mirrorAngle90(double angle, boolean degrees){
