@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.main;
 
-import android.os.DropBoxManager;
-
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.hardware.adafruit.AdafruitBNO055IMU;
@@ -70,9 +68,9 @@ public class RobotContainer {
     public final Map<String, LinkedList<Double>> loopTimesMap = new HashMap<>();
     public final Map<String, ElapsedTime> loopTimers = new HashMap<>();
     private final ElapsedTime telemetryLoopTimer = new ElapsedTime();
-    private final ArrayList<String> eventTelemetry = new ArrayList<>();
-    private final ArrayList<String> eventTelemetryCaptions = new ArrayList<>();
-    private final ArrayList<Object> eventTelemetryValues = new ArrayList<>();
+//    private final ArrayList<String> eventTelemetry = new ArrayList<>();
+//    private final ArrayList<String> eventTelemetryCaptions = new ArrayList<>();
+//    private final ArrayList<Object> eventTelemetryValues = new ArrayList<>();
     private Map<String, Object> currentLoopData = new HashMap<>();
     public TelemetryLogger telemetryLogger;
     public LocalizationUpdater localizationUpdater;
@@ -87,14 +85,12 @@ public class RobotContainer {
     public Brakes brakes;
     public Lever lever;
     public double controlHubVoltage;
-    public double expansionHubVoltage;
-    public double controlHubCurrent;
-    public double expansionHubCurrent;
+//    public double expansionHubVoltage;
+//    public double controlHubCurrent;
+//    public double expansionHubCurrent;
     public double switchCurrent;
-
     public ArrayList<String> telemetryHeaderList;
     public Map<String, ArrayList<String>> telemetryCache;
-
     public double CURRENT_LOOP_TIME_MS;
     public double PREV_LOOP_TIME_MS;
 
@@ -292,7 +288,7 @@ public class RobotContainer {
         telemetryLogger.start();
         localizationUpdater = new LocalizationUpdater(this, teleop);
         localizationUpdater.start();
-        telemetryLoopTimer.reset();
+//        telemetryLoopTimer.reset();
     }
 
     public void stop() {
@@ -373,17 +369,17 @@ public class RobotContainer {
     /**
      * Add or update a retained line of telemetry.
      */
-    public void addEventTelemetry(String caption, Object value) {
-        eventTelemetryCaptions.add(caption);
-        eventTelemetryValues.add(value);
-        eventTelemetry.add("TIME OF EVENT" + ": " + (System.currentTimeMillis() - startTimeMs)+ "\n" + caption + ": " + value.toString());
-    }
-
-    public void displayEventTelemetry() {
-        for (int i = 0; i < eventTelemetryCaptions.size(); i++) {
-            telemetry.addData(eventTelemetryCaptions.get(i), eventTelemetryValues.get(i));
-        }
-    }
+//    public void addEventTelemetry(String caption, Object value) {
+//        eventTelemetryCaptions.add(caption);
+//        eventTelemetryValues.add(value);
+//        eventTelemetry.add("TIME OF EVENT" + ": " + (System.currentTimeMillis() - startTimeMs)+ "\n" + caption + ": " + value.toString());
+//    }
+//
+//    public void displayEventTelemetry() {
+//        for (int i = 0; i < eventTelemetryCaptions.size(); i++) {
+//            telemetry.addData(eventTelemetryCaptions.get(i), eventTelemetryValues.get(i));
+//        }
+//    }
 
     /** This is for hardware error that are critical and code execution should stop to tell the user of the error. */
     public void testCriticalHardwareDevice(Object hardwareClass) {
@@ -451,30 +447,30 @@ public class RobotContainer {
         return selectedHub.getInputVoltage(VoltageUnit.VOLTS);
     }
 
-    public double getCurrent(int hubIndex) {
-        LynxModule selectedHub;
-
-        // Determine which hub to use based on hubIndex
-        switch (hubIndex) {
-            case 0:
-                selectedHub = HardwareDevices.controlHub;
-                break;
-            case 1:
-                selectedHub = HardwareDevices.expansionHub;
-                break;
-            default:
-                // Invalid index
-                addEventTelemetry("ERROR", "Invalid hub index");
-                return -1; // Or throw an exception
-        }
-
-        if (selectedHub == null) {
-            addEventTelemetry("ERROR", "Hub not found");
-            return -1;
-        }
-
-        return selectedHub.getCurrent(CurrentUnit.AMPS);
-    }
+//    public double getCurrent(int hubIndex) {
+//        LynxModule selectedHub;
+//
+//        // Determine which hub to use based on hubIndex
+//        switch (hubIndex) {
+//            case 0:
+//                selectedHub = HardwareDevices.controlHub;
+//                break;
+//            case 1:
+//                selectedHub = HardwareDevices.expansionHub;
+//                break;
+//            default:
+//                // Invalid index
+//                addEventTelemetry("ERROR", "Invalid hub index");
+//                return -1; // Or throw an exception
+//        }
+//
+//        if (selectedHub == null) {
+//            addEventTelemetry("ERROR", "Hub not found");
+//            return -1;
+//        }
+//
+//        return selectedHub.getCurrent(CurrentUnit.AMPS);
+//    }
 
     public synchronized void registerLoopTimer(String name) {
         loopTimesMap.put(name, new LinkedList<>());
@@ -591,17 +587,17 @@ public class RobotContainer {
         writeToFile("TelemetryLog.txt", csvLog.toString());
     }
 
-    public void writeEventLog() {
-        StringBuilder log = new StringBuilder();
-
-        for (int i = 0; i < eventTelemetry.size(); i++) {
-            log.append(eventTelemetry.get(i));
-            log.append('\n');
-            log.append('\n');
-        }
-
-        writeToFile("EventLog.txt", log.toString());
-    }
+//    public void writeEventLog() {
+//        StringBuilder log = new StringBuilder();
+//
+//        for (int i = 0; i < eventTelemetry.size(); i++) {
+//            log.append(eventTelemetry.get(i));
+//            log.append('\n');
+//            log.append('\n');
+//        }
+//
+//        writeToFile("EventLog.txt", log.toString());
+//    }
 
     public void telemetry(String opMode) {
         if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_UPDATE_INTERVAL_MS && !Status.competitionMode) {
@@ -688,7 +684,7 @@ public class RobotContainer {
 //                addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), true);
 //
                 telemetry.addLine();
-                displayEventTelemetry();
+//                displayEventTelemetry();
                 commitLoopData();
 //
 //                panelsTelemetry.addData("Flywheel Error", turret.flywheelError);

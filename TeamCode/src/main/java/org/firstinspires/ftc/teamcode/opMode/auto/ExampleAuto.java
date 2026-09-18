@@ -16,11 +16,13 @@ import com.pedropathing.follower.*;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.math.*;
 import com.pedropathing.paths.*;
+import org.firstinspires.ftc.teamcode.pedroPathing.PedroPathingConstants;
 
 // Panels Imports
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 // Our Imports
 import org.firstinspires.ftc.teamcode.main.Constants;
@@ -37,13 +39,33 @@ public class ExampleAuto extends OpMode {
         private final PoseFactory poseFactory = PoseFactory.degrees(); // Makes the creation of poses easier
         private RobotContainer robotContainer; // Robot container sets up all necessary hardware and software so that it can be immediately used in any code across the codebase without having to set it up in every file
 
+    // File Variables
+        boolean holding = false;
+        ElapsedTime pathTimer = new ElapsedTime();
+        int pathNumber = 1;
+
+
     // Poses
         private final Pose startPose = poseFactory.of(24, 24, 0);
         private final Pose startToScore = poseFactory.of(48, 48, 90);
         private final Pose park = poseFactory.of(72, 48, 90);
 
-    // Action initialisation
-        Runnable exampleAction;
+    // Action Creation
+    Command exampleCommand = Command.build()
+            .setStart(() -> {
+                // executed on start of command
+                Status.flywheelToggle = true;
+                robotContainer.lever.close();
+                robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[0]);
+            })
+            .setExecute(() -> {
+                // executed on every loop while command is running
+                robotContainer.turret.pointAtGoal();
+            })
+            .setEnd(endCondition -> {
+                // executed at the end of the command
+                pathNumber++;
+            });
 
     // Path methods
         private Path lineExample() {
@@ -62,7 +84,9 @@ public class ExampleAuto extends OpMode {
     private Command autoRoutineExample() {
         return sequential( // list of *commands* to run in a row when executed
                 follow(follower, lineExample()),
+                exampleCommand,
                 follow(follower, throughExample()),
+                exampleCommand,
                 follow(follower, curveExample())
         );
     }
@@ -75,23 +99,15 @@ public class ExampleAuto extends OpMode {
             throw new RuntimeException(e);
         }
 
+        robotContainer.init();
+
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry(); // creates a new instance of panels
         robotContainer.init();
         Scheduler.reset(); // resets the command scheduler for the ivy follower
 
-        follower = Constants.create(hardwareMap); // TODO: Help idk why this is erroring ):
+        follower = PedroPathingConstants.create(hardwareMap);
         follower.setPose(startPose); // Sets the starting pose for the robot
         follower.update();
-
-        //Action Creation
-            exampleAction = new Runnable() { // These are just some random ones that you could run just to show how you would put function calls in here
-                @Override
-                public void run() {
-                    Status.flywheelToggle = true;
-                    robotContainer.lever.close();
-                    robotContainer.turret.hood.setPos(Constants.Turret.HOOD_PRESETS[0]);
-                }
-            };
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.debug("Alliance", Status.alliance);
@@ -100,6 +116,7 @@ public class ExampleAuto extends OpMode {
 
     @Override
     public void start() { // Runs when the start button is pressed on the driver station
+        robotContainer.start(this, false);
         schedule(autoRoutineExample()); // This will schedule the auto routine that you had previously created to run in sequence
     }
 
@@ -115,7 +132,7 @@ public class ExampleAuto extends OpMode {
         panelsTelemetry.debug("Turret Target Degrees", robotContainer.turret.getTargetPositionDegrees());
         panelsTelemetry.debug("Path Timer", pathTimer.milliseconds());
         panelsTelemetry.debug("Holding", holding);
-        panelsTelemetry.debug("Path State", pathState);
+        panelsTelemetry.debug("Path Number", pathNumber);
         panelsTelemetry.debug("X", follower.pose().x());
         panelsTelemetry.debug("Y", follower.pose().y());
         panelsTelemetry.debug("Heading", follower.pose().heading());
