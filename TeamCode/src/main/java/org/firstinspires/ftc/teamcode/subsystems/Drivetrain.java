@@ -149,6 +149,6 @@ public class Drivetrain {
     }
 
     public double getCurrent(){
-        return leftBack.getCurrent(CurrentUnit.AMPS) + leftFront.getCurrent(CurrentUnit.AMPS) + rightFront.getCurrent(CurrentUnit.AMPS) + rightBack.getCurrent(CurrentUnit.AMPS);
+        return leftBack.getCurrent(CurrentUnit.MILLIAMPS) + leftFront.getCurrent(CurrentUnit.MILLIAMPS) + rightFront.getCurrent(CurrentUnit.MILLIAMPS) + rightBack.getCurrent(CurrentUnit.MILLIAMPS);
     }
 }

@@ -42,8 +42,6 @@ public class Constants {
         );
 
         public static double STARTING_X = 0, STARTING_Y = 0, STARTING_HEADING = 0;
-        public static double GOALSIDE_STARTING_X = 0, GOALSIDE_STARTING_Y = 0, GOALSIDE_STARTING_HEADING = 0;
-
 
         public static final int
                 CONTROL_HUB_INDEX = 0,
@@ -57,13 +55,10 @@ public class Constants {
         public static int TELEMETRY_UPDATE_INTERVAL_MS = 750;
         public static int TELEMETRY_COMP_UPDATE_INTERVAL_MS = 750;
         public static int PINPOINT_UPDATE_DELAY_MS = 50;
-        public static final double
-                PINPOINT_X_OFFSET_MM = 0;
+        public static final double PINPOINT_X_OFFSET_MM = 0;
         public static final double PINPOINT_Y_OFFSET_MM = 0;
-        public static final GoBildaPinpointDriver.GoBildaOdometryPods
-                PINPOINT_ODOM_POD = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD;
-        public static final GoBildaPinpointDriver.EncoderDirection
-                PINPOINT_X_ENCODER_DIRECTION = GoBildaPinpointDriver.EncoderDirection.FORWARD;
+        public static final GoBildaPinpointDriver.GoBildaOdometryPods PINPOINT_ODOM_POD = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD;
+        public static final GoBildaPinpointDriver.EncoderDirection PINPOINT_X_ENCODER_DIRECTION = GoBildaPinpointDriver.EncoderDirection.FORWARD;
         public static final GoBildaPinpointDriver.EncoderDirection PINPOINT_Y_ENCODER_DIRECTION = GoBildaPinpointDriver.EncoderDirection.FORWARD;
         public static double IMU_PER_ROTATION_OFFSET = 3.1;
         public static boolean USE_BETTER_IMU = false;

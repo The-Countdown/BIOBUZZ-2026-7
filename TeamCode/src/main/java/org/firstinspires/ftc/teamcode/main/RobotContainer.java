@@ -38,6 +38,7 @@ import org.firstinspires.ftc.teamcode.util.DelayedActionManager;
 import org.firstinspires.ftc.teamcode.util.GamepadWrapper;
 import org.firstinspires.ftc.teamcode.hardware.LinkedMotors;
 import org.firstinspires.ftc.teamcode.hardware.LinkedServos;
+import org.firstinspires.ftc.teamcode.util.HelperFunctions;
 import org.firstinspires.ftc.teamcode.util.TelemetryLogger;
 
 import java.io.File;
@@ -68,9 +69,9 @@ public class RobotContainer {
     public final Map<String, LinkedList<Double>> loopTimesMap = new HashMap<>();
     public final Map<String, ElapsedTime> loopTimers = new HashMap<>();
     private final ElapsedTime telemetryLoopTimer = new ElapsedTime();
-//    private final ArrayList<String> eventTelemetry = new ArrayList<>();
-//    private final ArrayList<String> eventTelemetryCaptions = new ArrayList<>();
-//    private final ArrayList<Object> eventTelemetryValues = new ArrayList<>();
+    private final ArrayList<String> eventTelemetry = new ArrayList<>();
+    private final ArrayList<String> eventTelemetryCaptions = new ArrayList<>();
+    private final ArrayList<Object> eventTelemetryValues = new ArrayList<>();
     private Map<String, Object> currentLoopData = new HashMap<>();
     public TelemetryLogger telemetryLogger;
     public LocalizationUpdater localizationUpdater;
@@ -85,9 +86,9 @@ public class RobotContainer {
     public Brakes brakes;
     public Lever lever;
     public double controlHubVoltage;
-//    public double expansionHubVoltage;
-//    public double controlHubCurrent;
-//    public double expansionHubCurrent;
+    public double expansionHubVoltage;
+    public double controlHubCurrent;
+    public double expansionHubCurrent;
     public double switchCurrent;
     public ArrayList<String> telemetryHeaderList;
     public Map<String, ArrayList<String>> telemetryCache;
@@ -115,7 +116,7 @@ public class RobotContainer {
         public static ServoImplEx indicatorLightLeft;
         public static ServoImplEx indicatorLightRight;
 
-//        // Turret
+        // Turret
         public static BetterDcMotor flywheelMotorLeader;
         public static BetterDcMotor flywheelMotorFollower;
         public static BetterServo turretServoLeader;
@@ -128,8 +129,8 @@ public class RobotContainer {
         public static BetterDcMotor intakeMotorFollower;
 
         // Brakes
-        public static BetterServo brakeServoLeader;
-        public static BetterServo brakeServoFollower;
+        public static BetterServo brakesServoLeader;
+        public static BetterServo brakesServoFollower;
 
     }
 
@@ -199,9 +200,9 @@ public class RobotContainer {
         HardwareDevices.flywheelMotorLeader = new BetterDcMotor(hardwareMap.get(DcMotorImplEx.class, "flywheelMotorLeader"), 0);
         HardwareDevices.flywheelMotorFollower = new BetterDcMotor(hardwareMap.get(DcMotorImplEx.class, "flywheelMotorFollower"), 0);
 
-        HardwareDevices.brakeServoLeader = new BetterServo(getHardwareDevice(ServoImplEx.class, "brakesServoLeader"), Constants.Robot.SERVO_UPDATE_TIME);
-        HardwareDevices.brakeServoFollower = new BetterServo(getHardwareDevice(ServoImplEx.class, "brakesServoFollower"), Constants.Robot.SERVO_UPDATE_TIME);
-        LinkedServos brakeServos = new LinkedServos(HardwareDevices.brakeServoLeader, HardwareDevices.brakeServoFollower);
+        HardwareDevices.brakesServoLeader = new BetterServo(getHardwareDevice(ServoImplEx.class, "brakesServoLeader"), Constants.Robot.SERVO_UPDATE_TIME);
+        HardwareDevices.brakesServoFollower = new BetterServo(getHardwareDevice(ServoImplEx.class, "brakesServoFollower"), Constants.Robot.SERVO_UPDATE_TIME);
+        LinkedServos brakesServos = new LinkedServos(HardwareDevices.brakesServoLeader, HardwareDevices.brakesServoFollower);
 
         HardwareDevices.leverServo = new BetterServo(getHardwareDevice(ServoImplEx.class, "leverServo"), Constants.Robot.SERVO_UPDATE_TIME);
 
@@ -215,7 +216,7 @@ public class RobotContainer {
         turret = new Turret(this, flywheelMotors, HardwareDevices.hoodServo, turretServos);
         HardwareDevices.intakeMotorLeader.setDirection(DcMotor.Direction.REVERSE);
         intake = new Intake(this, intakeMotors);
-        brakes = new Brakes(this, brakeServos);
+        brakes = new Brakes(this, brakesServos);
         lever = new Lever(this, HardwareDevices.leverServo);
 
         drivetrain = new Drivetrain(this, HardwareDevices.leftFront, HardwareDevices.rightFront, HardwareDevices.leftBack, HardwareDevices.rightBack);
@@ -246,6 +247,7 @@ public class RobotContainer {
 
         panelsTelemetry.debug("Calibrating Pinpoint...");
         panelsTelemetry.update(telemetry);
+
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -264,22 +266,15 @@ public class RobotContainer {
         gamepadEx1 = new GamepadWrapper(opmode.gamepad1);
         gamepadEx2 = new GamepadWrapper(opmode.gamepad2);
         Status.isDrivingActive = false;
-        if (teleop) {
-            Status.goalPose = Status.alliance == Constants.Game.ALLIANCE.RED ?
-                    new Pose2D(DistanceUnit.INCH, 70, 70, AngleUnit.DEGREES, -45) :
-                    Status.alliance == Constants.Game.ALLIANCE.BLUE ?
-                            new Pose2D(DistanceUnit.INCH, -70, 70, AngleUnit.DEGREES, 45) :
-                            new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
-        } else {
-            Status.goalPose = Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.INCH, 70, -70, AngleUnit.DEGREES, 45) : new Pose2D(DistanceUnit.INCH, 70, 70, AngleUnit.DEGREES, -45);
-        }
-        Status.goalsideStartingPose = Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.INCH, Constants.Robot.GOALSIDE_STARTING_X, Constants.Robot.GOALSIDE_STARTING_Y, AngleUnit.DEGREES, Constants.Robot.GOALSIDE_STARTING_HEADING) :
-                                      Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, Constants.Robot.GOALSIDE_STARTING_X, -Constants.Robot.GOALSIDE_STARTING_Y, AngleUnit.DEGREES, Constants.Robot.GOALSIDE_STARTING_HEADING) :
-                                      new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
+        Status.goalPose =
+                Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.INCH, 70, 70, AngleUnit.DEGREES, -45) :
+                Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.INCH, -70, 70, AngleUnit.DEGREES, 45) :
+                new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
 
-        Status.startingPose = Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.CM, Constants.Robot.STARTING_X, Constants.Robot.STARTING_Y, AngleUnit.DEGREES, Constants.Robot.STARTING_HEADING) :
-                              Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.CM, Constants.Robot.STARTING_X, -Constants.Robot.STARTING_Y, AngleUnit.DEGREES, -Constants.Robot.STARTING_HEADING) :
-                              new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
+        Status.startingPose =
+                Status.alliance == Constants.Game.ALLIANCE.RED ? new Pose2D(DistanceUnit.CM, Constants.Robot.STARTING_X, Constants.Robot.STARTING_Y, AngleUnit.DEGREES, Constants.Robot.STARTING_HEADING) :
+                Status.alliance == Constants.Game.ALLIANCE.BLUE ? new Pose2D(DistanceUnit.CM, Constants.Robot.STARTING_X, -Constants.Robot.STARTING_Y, AngleUnit.DEGREES, -Constants.Robot.STARTING_HEADING) :
+                new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0);
 
 
 
@@ -288,7 +283,6 @@ public class RobotContainer {
         telemetryLogger.start();
         localizationUpdater = new LocalizationUpdater(this, teleop);
         localizationUpdater.start();
-//        telemetryLoopTimer.reset();
     }
 
     public void stop() {
@@ -329,7 +323,6 @@ public class RobotContainer {
         brakes.update(teleop);
         intake.update(teleop);
 
-        controlHubVoltage = getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
         switchCurrent = (HardwareDevices.switchCurrentSensor.getVoltage() / 3.3) * 80;
 
         PREV_LOOP_TIME_MS = CURRENT_LOOP_TIME_MS;
@@ -338,177 +331,22 @@ public class RobotContainer {
             telemetry("teleOp");
         }
 
-        if (Constants.System.USE_BETTER_IMU) {
-            Status.currentHeading = RobotContainer.HardwareDevices.betterIMU.getAngle();
-        } else {
-            Status.currentHeading = Status.currentPose.getHeading(AngleUnit.DEGREES);
-        }
-    }
-
-    /**
-     * Retrieves a hardware device from the hardware map.
-     * <p>
-     * This method attempts to retrieve a specific hardware device from the hardware map,
-     * based on the provided class type and device name. If the device is found, it is
-     * returned; otherwise, an error message is added to the telemetry, and null is returned.
-     *
-     * @param <T>           The type of the hardware device being requested.
-     * @param hardwareClass The class of the hardware device (e.g., DcMotor.class, Servo.class).
-     * @param name          The name of the hardware device as configured in the Robot Controller app.
-     * @return The requested hardware device if found; null otherwise.
-     */
-    public <T> T getHardwareDevice(Class<T> hardwareClass, String name) {
-        try {
-            return hardwareMap.get(hardwareClass, name);
-        } catch (Exception e) {
-            telemetry.addLine("Could not load hardware class: '" + name + "' and got error: '" + e + "'");
-            return null; // Or throw the exception if you prefer
-        }
+        Status.currentHeading = Constants.System.USE_BETTER_IMU ? HardwareDevices.betterIMU.getAngle() : Status.currentPose.getHeading(AngleUnit.DEGREES);
     }
 
     /**
      * Add or update a retained line of telemetry.
      */
-//    public void addEventTelemetry(String caption, Object value) {
-//        eventTelemetryCaptions.add(caption);
-//        eventTelemetryValues.add(value);
-//        eventTelemetry.add("TIME OF EVENT" + ": " + (System.currentTimeMillis() - startTimeMs)+ "\n" + caption + ": " + value.toString());
-//    }
-//
-//    public void displayEventTelemetry() {
-//        for (int i = 0; i < eventTelemetryCaptions.size(); i++) {
-//            telemetry.addData(eventTelemetryCaptions.get(i), eventTelemetryValues.get(i));
-//        }
-//    }
-
-    /** This is for hardware error that are critical and code execution should stop to tell the user of the error. */
-    public void testCriticalHardwareDevice(Object hardwareClass) {
-        if (hardwareClass == null) {
-            telemetry.log().clear();
-            telemetry.addLine("Failed to load hardware class, class is null");
-            telemetry.addLine("This message will show for 10 seconds.");
-            telemetry.update();
-            try {
-                Thread.sleep(10000); // 10 seconds = 10000 milliseconds.
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // Do something here, prob something else.
-            }
-        }
+    public void addEventTelemetry(String caption, Object value) {
+        eventTelemetryCaptions.add(caption);
+        eventTelemetryValues.add(value);
+        eventTelemetry.add("TIME OF EVENT" + ": " + (System.currentTimeMillis() - startTimeMs)+ "\n" + caption + ": " + value.toString());
     }
 
-    /**
-     * Refreshes the data from all Lynx Modules (hubs) by clearing their bulk data cache.
-     * <p>
-     * This method is crucial for ensuring that the robot is operating with the most up-to-date
-     * sensor and motor data. The Lynx Modules use a bulk data cache to optimize data transfer.
-     * However, if data in this cache becomes stale, the robot's actions might be based on
-     * outdated information.
-     * <p>
-     * This method should be called periodically or whenever you suspect that the data in the
-     * bulk cache might be outdated. Common scenarios include:
-     * - At the start of a new control loop iteration in teleop or autonomous.
-     * - After a significant delay or pause in the robot's operation.
-     * - Before reading critical sensor values that need to be absolutely current.
-     * - If there is a change in the bulk caching mode.
-     * <p>
-     * Calling this method ensures that the next time you read data from the hubs, the latest
-     * information will be fetched, rather than possibly outdated cached data.
-     */
-    public void refreshData() {
-        for (LynxModule hub : HardwareDevices.allHubs) {
-            hub.clearBulkCache();
+    public void displayEventTelemetry() {
+        for (int i = 0; i < eventTelemetryCaptions.size(); i++) {
+            telemetry.addData(eventTelemetryCaptions.get(i), eventTelemetryValues.get(i));
         }
-    }
-
-    public double getVoltage(int hubIndex) {
-        LynxModule selectedHub;
-
-        // Determine which hub to use based on hubIndex
-        switch (hubIndex) {
-            case 0:
-                selectedHub = HardwareDevices.controlHub;
-                break;
-            case 1:
-                selectedHub = HardwareDevices.expansionHub;
-                break;
-            default:
-                // Invalid index
-                opMode.telemetry.addLine("ERROR: Invalid hub index");
-                opMode.telemetry.update();
-                return -1; // Or throw an exception
-        }
-
-        if (selectedHub == null) {
-            opMode.telemetry.addLine("ERROR: Hub not found");
-            opMode.telemetry.update();
-            return -1;
-        }
-
-        return selectedHub.getInputVoltage(VoltageUnit.VOLTS);
-    }
-
-//    public double getCurrent(int hubIndex) {
-//        LynxModule selectedHub;
-//
-//        // Determine which hub to use based on hubIndex
-//        switch (hubIndex) {
-//            case 0:
-//                selectedHub = HardwareDevices.controlHub;
-//                break;
-//            case 1:
-//                selectedHub = HardwareDevices.expansionHub;
-//                break;
-//            default:
-//                // Invalid index
-//                addEventTelemetry("ERROR", "Invalid hub index");
-//                return -1; // Or throw an exception
-//        }
-//
-//        if (selectedHub == null) {
-//            addEventTelemetry("ERROR", "Hub not found");
-//            return -1;
-//        }
-//
-//        return selectedHub.getCurrent(CurrentUnit.AMPS);
-//    }
-
-    public synchronized void registerLoopTimer(String name) {
-        loopTimesMap.put(name, new LinkedList<>());
-        loopTimers.put(name, new ElapsedTime());
-    }
-
-    /**
-     * Call at the top of your named loop.
-     * @return The elapsed time (ms) since last call for this name.
-     */
-    public synchronized double updateLoopTime(String name) {
-        ElapsedTime timer = loopTimers.get(name);
-        LinkedList<Double> times = loopTimesMap.get(name);
-        if (timer == null || times == null) {
-            throw new IllegalArgumentException("LoopTimer not registered: " + name);
-        }
-        double dt = timer.milliseconds();
-        timer.reset();
-        times.add(dt);
-        if (times.size() > Constants.System.LOOP_AVERAGE_WINDOW_SIZE) {
-            times.removeFirst();
-        }
-        return dt;
-    }
-
-    /** Call anywhere to get the rolling average for that loop name. */
-    public synchronized double getRollingAverageLoopTime(String name) {
-        LinkedList<Double> times = loopTimesMap.get(name);
-        if (times == null || times.isEmpty()) return 0;
-        double sum = 0;
-        for (double t : times) sum += t;
-        return sum / times.size();
-    }
-
-    public synchronized double getLoopTime(String name) {
-        LinkedList<Double> times = loopTimesMap.get(name);
-        if (times == null || times.isEmpty()) return 0;
-        return times.getLast();
     }
 
     public void writeToFile (String fileName, String data) {
@@ -519,6 +357,7 @@ public class RobotContainer {
     public void addDataLog(String caption, Object data, boolean driveStation) {
         if (driveStation) {
             telemetry.addData(caption, data);
+            panelsTelemetry.addData(caption, data);
         }
 
         if (!Status.loggingToFile) {
@@ -587,17 +426,117 @@ public class RobotContainer {
         writeToFile("TelemetryLog.txt", csvLog.toString());
     }
 
-//    public void writeEventLog() {
-//        StringBuilder log = new StringBuilder();
-//
-//        for (int i = 0; i < eventTelemetry.size(); i++) {
-//            log.append(eventTelemetry.get(i));
-//            log.append('\n');
-//            log.append('\n');
-//        }
-//
-//        writeToFile("EventLog.txt", log.toString());
-//    }
+    public void writeEventLog() {
+        StringBuilder log = new StringBuilder();
+
+        for (int i = 0; i < eventTelemetry.size(); i++) {
+            log.append(eventTelemetry.get(i));
+            log.append('\n');
+            log.append('\n');
+        }
+
+        writeToFile("EventLog.txt", log.toString());
+    }
+
+
+    /**
+     * Retrieves a hardware device from the hardware map.
+     * <p>
+     * This method attempts to retrieve a specific hardware device from the hardware map,
+     * based on the provided class type and device name. If the device is found, it is
+     * returned; otherwise, an error message is added to the telemetry, and null is returned.
+     *
+     * @param <T>           The type of the hardware device being requested.
+     * @param hardwareClass The class of the hardware device (e.g., DcMotor.class, Servo.class).
+     * @param name          The name of the hardware device as configured in the Robot Controller app.
+     * @return The requested hardware device if found; null otherwise.
+     */
+    public <T> T getHardwareDevice(Class<T> hardwareClass, String name) {
+        try {
+            return hardwareMap.get(hardwareClass, name);
+        } catch (Exception e) {
+            telemetry.addLine("Could not load hardware class: '" + name + "' and got error: '" + e + "'");
+            return null; // Or throw the exception if you prefer
+        }
+    }
+
+    /** This is for hardware error that are critical and code execution should stop to tell the user of the error. */
+    public void testCriticalHardwareDevice(Object hardwareClass) {
+        if (hardwareClass == null) {
+            telemetry.log().clear();
+            telemetry.addLine("Failed to load hardware class, class is null");
+            telemetry.addLine("This message will show for 10 seconds.");
+            telemetry.update();
+            try {
+                Thread.sleep(10000); // 10 seconds = 10000 milliseconds.
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Do something here, prob something else.
+            }
+        }
+    }
+
+    /**
+     * Refreshes the data from all Lynx Modules (hubs) by clearing their bulk data cache.
+     * <p>
+     * This method is crucial for ensuring that the robot is operating with the most up-to-date
+     * sensor and motor data. The Lynx Modules use a bulk data cache to optimize data transfer.
+     * However, if data in this cache becomes stale, the robot's actions might be based on
+     * outdated information.
+     * <p>
+     * This method should be called periodically or whenever you suspect that the data in the
+     * bulk cache might be outdated. Common scenarios include:
+     * - At the start of a new control loop iteration in teleop or autonomous.
+     * - After a significant delay or pause in the robot's operation.
+     * - Before reading critical sensor values that need to be absolutely current.
+     * - If there is a change in the bulk caching mode.
+     * <p>
+     * Calling this method ensures that the next time you read data from the hubs, the latest
+     * information will be fetched, rather than possibly outdated cached data.
+     */
+    public void refreshData() {
+        for (LynxModule hub : HardwareDevices.allHubs) {
+            hub.clearBulkCache();
+        }
+    }
+
+    public synchronized void registerLoopTimer(String name) {
+        loopTimesMap.put(name, new LinkedList<>());
+        loopTimers.put(name, new ElapsedTime());
+    }
+
+    /**
+     * Call at the top of your named loop.
+     * @return The elapsed time (ms) since last call for this name.
+     */
+    public synchronized double updateLoopTime(String name) {
+        ElapsedTime timer = loopTimers.get(name);
+        LinkedList<Double> times = loopTimesMap.get(name);
+        if (timer == null || times == null) {
+            throw new IllegalArgumentException("LoopTimer not registered: " + name);
+        }
+        double dt = timer.milliseconds();
+        timer.reset();
+        times.add(dt);
+        if (times.size() > Constants.System.LOOP_AVERAGE_WINDOW_SIZE) {
+            times.removeFirst();
+        }
+        return dt;
+    }
+
+    /** Call anywhere to get the rolling average for that loop name. */
+    public synchronized double getRollingAverageLoopTime(String name) {
+        LinkedList<Double> times = loopTimesMap.get(name);
+        if (times == null || times.isEmpty()) return 0;
+        double sum = 0;
+        for (double t : times) sum += t;
+        return sum / times.size();
+    }
+
+    public synchronized double getLoopTime(String name) {
+        LinkedList<Double> times = loopTimesMap.get(name);
+        if (times == null || times.isEmpty()) return 0;
+        return times.getLast();
+    }
 
     public void telemetry(String opMode) {
         if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_UPDATE_INTERVAL_MS && !Status.competitionMode) {
@@ -607,96 +546,87 @@ public class RobotContainer {
         }
         // This line is required for the logViwer to work correctly
         // It also need to be at column zero and spelled exactly "Time Stamp"
-        addDataLog("Time Stamp", System.currentTimeMillis() - startTimeMs, true);
+        addDataLog("Time Stamp", System.currentTimeMillis() - startTimeMs, false);
 
         // Stuff also in competition mode
-        addDataLog("Alliance", Status.alliance, true);
+        addDataLog("Alliance", Status.alliance, false);
         telemetry.addLine();
-        addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", true);
-        addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", true);
+        addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
+        addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
         telemetry.addLine();
-        addDataLog("Switch Amps", switchCurrent + " A", true);
+        addDataLog("Switch Amps", switchCurrent + " A", false);
         telemetry.addLine();
-        addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", true);
-        addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", true);
-        addDataLog("Robot Heading", Status.currentHeading + "°", true);
-        addDataLog("Logging to file", Status.loggingToFile, true);
+        addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", false);
+        addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", false);
+        addDataLog("Robot Heading", Status.currentHeading + "°", false);
+        addDataLog("Logging to file", Status.loggingToFile, false);
 
-        addDataLog("BetterIMU Yaw", Status.currentHeading, true); // First angle is the yaw
-        addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), true); // First angle is the yaw
-        addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, true);
+        addDataLog("BetterIMU Yaw", Status.currentHeading, false); // First angle is the yaw
+        addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), false); // First angle is the yaw
+        addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
 
-        if (!Status.competitionMode) {
-
-            // Stuff not in competition mode.
-
+        if (!Status.competitionMode) { // Stuff not in competition mode.
             // Get current and voltage for telemetry
-//                controlHubVoltage = getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
-//                expansionHubVoltage = getVoltage(Constants.Robot.EXPANSION_HUB_INDEX);
-//                controlHubCurrent = getCurrent(Constants.Robot.CONTROL_HUB_INDEX);
-//                expansionHubCurrent = getCurrent(Constants.Robot.EXPANSION_HUB_INDEX);
-//                addDataLog("Control Hub Voltage", controlHubVoltage + " V", true);
-//                addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", true);
-//                addDataLog("Control Hub Current", controlHubCurrent + " A", true);
-//                addDataLog("Expansion Hub Current", expansionHubCurrent + " A", true);
-//                addDataLog("Switch Amps", switchCurrent + " A", true);
-//                telemetry.addLine();
-//                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, true);
-//                addDataLog("Flywheel Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), true);
-//                addDataLog("Flywheel Main Motor Current mA", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Flywheel Secondary Motor Current mA", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Flywheel2 Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), true);
-//                telemetry.addLine();
-//                addDataLog("Turret Current Angle", turret.getPositionDegrees(), true);
-//                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), true);
-//                telemetry.addLine();
-//                addDataLog("Brakes position", brakes.getPosition(), true);
-//                addDataLog("Brakes angle", brakes.getPositionDegrees(), true);
-//                telemetry.addLine();
-//                addDataLog("Robot Heading", Status.currentHeading + "°", true);
-//                addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), true);
-//                addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), true);
-//                addDataLog("Distance to Goal", HelperFunctions.disToGoal(), true);
-//                telemetry.addLine();
-//                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", true);
-//                addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", true);
-//                telemetry.addLine();
-//                addDataLog("Goal Position", Status.goalPose, true);
-//                addDataLog("Start Position", Status.startingPose, true);
-//                telemetry.addLine();
-//                addDataLog("Field Oriented", Status.fieldOriented, true);
-//                addDataLog("Intake Toggle", Status.intakeGamepadable, true);
-//
-//                // Test Power draw
-//                addDataLog("Motor Intake 1", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Intake 2", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Flywheel 1", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Flywheel 2", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Drive LF", HardwareDevices.leftFront.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Drive RF", HardwareDevices.rightFront.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Drive LB", HardwareDevices.leftBack.getCurrent(CurrentUnit.MILLIAMPS), true);
-//                addDataLog("Motor Drive RB", HardwareDevices.rightBack.getCurrent(CurrentUnit.MILLIAMPS), true);
-//
-//                addDataLog("Servo Hood", HardwareDevices.hoodServo.getPosition(), true);
-//                addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), true);
-//                addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), true);
-//                addDataLog("Brakes Servo Leader", HardwareDevices.brakesServoLeader.getPosition(), true);
-//                addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), true);
-//
-                telemetry.addLine();
-//                displayEventTelemetry();
-                commitLoopData();
-//
-//                panelsTelemetry.addData("Flywheel Error", turret.flywheelError);
-//                panelsTelemetry.addData("Flywheel Target", turret.flywheel.targetVelocity);
-//                panelsTelemetry.addData("Flywheel Velocity", turret.flywheel.getFlywheelVelocity());
-//                panelsTelemetry.addData("Lever Open", Status.leverOpen);
-//                panelsTelemetry.addData("New Intake Power", intake.getNewPower());
-//
-//                panelsTelemetry.addData("Current", switchCurrent + " A");
-//                panelsTelemetry.addData("Intake Current", intake.getCurrent() + "A");
-//                panelsTelemetry.addData("Drive Current", drivetrain.getCurrent() + "A");
-//                panelsTelemetry.addData("Flywheel Current", turret.flywheel.getCurrent() + "A");
+                controlHubVoltage = HardwareDevices.controlHub.getInputVoltage(VoltageUnit.VOLTS);
+                expansionHubVoltage = HardwareDevices.expansionHub.getInputVoltage(VoltageUnit.VOLTS);
+                controlHubCurrent = HardwareDevices.controlHub.getCurrent(CurrentUnit.AMPS);
+                expansionHubCurrent = HardwareDevices.expansionHub.getCurrent(CurrentUnit.AMPS);
+
+            telemetry.addLine(); // Voltages and Currents MAIN
+                addDataLog("Control Hub Voltage", controlHubVoltage + " V", false);
+                addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", false);
+                addDataLog("Control Hub Current", controlHubCurrent + " A", false);
+                addDataLog("Expansion Hub Current", expansionHubCurrent + " A", false);
+                addDataLog("Switch Amps", switchCurrent + " A", false);
+            telemetry.addLine(); // Flywheel
+                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, false);
+                addDataLog("Flywheel Leader Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), false);
+                addDataLog("Flywheel Follower Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), false);
+                addDataLog("Flywheel Error", turret.flywheelError, false);
+            telemetry.addLine(); // Turret & Hood
+                addDataLog("Turret Current Angle", turret.getPositionDegrees(), false);
+                addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), false);
+                addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), false);
+                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), false);
+            telemetry.addLine(); // Brakes
+                addDataLog("Brakes position", brakes.getPosition(), false);
+                addDataLog("Brakes angle", brakes.getPositionDegrees(), false);
+                addDataLog("Brakes Servo Leader", HardwareDevices.brakesServoLeader.getPosition(), false);
+                addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), false);
+            telemetry.addLine(); // Lever
+                addDataLog("Lever Open", Status.leverOpen, false);
+            telemetry.addLine(); // Position & Heading
+                addDataLog("Robot Heading", Status.currentHeading, false);
+                addDataLog("Robot Position", Status.currentPose, false);
+                addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), false);
+                addDataLog("Better IMU Heading", HardwareDevices.betterIMU.getAngle(), false);
+                addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), false);
+            telemetry.addLine(); // Loop Times
+                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", false);
+                addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", false);
+            telemetry.addLine(); // General Info
+                addDataLog("Start Position", Status.startingPose, false);
+                addDataLog("Field Oriented", Status.fieldOriented, false);
+                addDataLog("Goal Position", Status.goalPose, false);
+                addDataLog("Distance to Goal", HelperFunctions.disToGoal(), false);
+            telemetry.addLine(); // Individual Power Draw
+                // Intake
+                addDataLog("Intake Total Current", intake.getCurrent(), false);
+                addDataLog("Motor Intake Leader", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Intake Follower", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), false);
+                // Flywheel
+                addDataLog("Flywheel Total Current", turret.flywheel.getCurrent(), false);
+                addDataLog("Motor Flywheel Leader", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Flywheel Follower", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), false);
+                // Drivetrain
+                addDataLog("Drivetrain Total Current", drivetrain.getCurrent(), false);
+                addDataLog("Motor Drive LF Current", HardwareDevices.leftFront.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Drive RF Current", HardwareDevices.rightFront.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Drive LB Current", HardwareDevices.leftBack.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Drive RB Current", HardwareDevices.rightBack.getCurrent(CurrentUnit.MILLIAMPS), false);
+            telemetry.addLine();
+            displayEventTelemetry();
+            commitLoopData();
         }
 
         panelsTelemetry.update(telemetry);

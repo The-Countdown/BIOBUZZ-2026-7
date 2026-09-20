@@ -22,7 +22,6 @@ public class Status {
     public static Pose2D cornerResetPose;
     public static Pose2D goalPose;
     public static Pose2D startingPose;
-    public static Pose2D goalsideStartingPose;
 
     public static boolean opModeIsActive = false;
     public static boolean isDrivingActive = false;
