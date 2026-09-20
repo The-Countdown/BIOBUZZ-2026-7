@@ -64,8 +64,6 @@ public class RobotContainer {
     public Telemetry telemetry;
     public TelemetryManager panelsTelemetry;
     public boolean isRunning = false;
-    public GamepadWrapper gamepadEx1;
-    public GamepadWrapper gamepadEx2;
     public final Map<String, LinkedList<Double>> loopTimesMap = new HashMap<>();
     public final Map<String, ElapsedTime> loopTimers = new HashMap<>();
     private final ElapsedTime telemetryLoopTimer = new ElapsedTime();
@@ -77,10 +75,13 @@ public class RobotContainer {
     public LocalizationUpdater localizationUpdater;
     public DelayedActionManager delayedActionManager = new DelayedActionManager(this);
     public PositionProvider positionProvider;
-    public Drivetrain drivetrain;
     public IndicatorLighting.Light indicatorLightLeft;
     public IndicatorLighting.Light indicatorLightRight;
     public IndicatorLighting.Group allIndicatorLights;
+    public static BNO055IMU.Parameters betterIMUP = new BNO055IMU.Parameters();
+    public GamepadWrapper gamepadEx1;
+    public GamepadWrapper gamepadEx2;
+    public Drivetrain drivetrain;
     public Turret turret;
     public Intake intake;
     public Brakes brakes;
@@ -94,9 +95,6 @@ public class RobotContainer {
     public Map<String, ArrayList<String>> telemetryCache;
     public double CURRENT_LOOP_TIME_MS;
     public double PREV_LOOP_TIME_MS;
-
-    public static BNO055IMU.Parameters betterIMUP = new BNO055IMU.Parameters();
-
     public static class HardwareDevices {
         public static List<LynxModule> allHubs;
         public static LynxModule controlHub;
@@ -241,12 +239,15 @@ public class RobotContainer {
 
         if (Status.competitionMode) {
             telemetry.setMsTransmissionInterval(Constants.System.TELEMETRY_COMP_UPDATE_INTERVAL_MS);
+            Status.loggingToFile = false;
         } else {
             telemetry.setMsTransmissionInterval(Constants.System.TELEMETRY_UPDATE_INTERVAL_MS);
         }
 
         panelsTelemetry.debug("Calibrating Pinpoint...");
+        telemetry.addLine("Calibrating Pinpoint...");
         panelsTelemetry.update(telemetry);
+        telemetry.update();
 
         try {
             Thread.sleep(500);
@@ -258,7 +259,10 @@ public class RobotContainer {
     public void initLoop() {
         panelsTelemetry.debug("Status: Initialized");
         panelsTelemetry.debug("Alliance: " + Status.alliance.toString());
+        telemetry.addLine("Status: Initialized");
+        telemetry.addLine("Alliance: " + Status.alliance.toString());
         panelsTelemetry.update(telemetry);
+        telemetry.update();
         allIndicatorLights.rainbow();
     }
 
@@ -337,7 +341,7 @@ public class RobotContainer {
     /**
      * Add or update a retained line of telemetry.
      */
-    public void addEventTelemetry(String caption, Object value) {
+    public void addEventTelemetry(String caption, Object value) { // This is useful in error detection / major failure point location
         eventTelemetryCaptions.add(caption);
         eventTelemetryValues.add(value);
         eventTelemetry.add("TIME OF EVENT" + ": " + (System.currentTimeMillis() - startTimeMs)+ "\n" + caption + ": " + value.toString());
@@ -346,6 +350,7 @@ public class RobotContainer {
     public void displayEventTelemetry() {
         for (int i = 0; i < eventTelemetryCaptions.size(); i++) {
             telemetry.addData(eventTelemetryCaptions.get(i), eventTelemetryValues.get(i));
+            panelsTelemetry.addData(eventTelemetryCaptions.get(i), eventTelemetryValues.get(i));
         }
     }
 
@@ -386,7 +391,7 @@ public class RobotContainer {
             return;
         }
         // Determine the current row number
-        int row = telemetryCache.get(telemetryHeaderList.get(0)).size();
+//        int row = telemetryCache.get(telemetryHeaderList.get(0)).size();
 
         // For every column, add value from buffer or empty string
         for (String header : telemetryHeaderList) {
@@ -547,25 +552,24 @@ public class RobotContainer {
         // This line is required for the logViwer to work correctly
         // It also need to be at column zero and spelled exactly "Time Stamp"
         addDataLog("Time Stamp", System.currentTimeMillis() - startTimeMs, false);
-
-        // Stuff also in competition mode
-        addDataLog("Alliance", Status.alliance, false);
-        telemetry.addLine();
-        addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
-        addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
-        telemetry.addLine();
-        addDataLog("Switch Amps", switchCurrent + " A", false);
-        telemetry.addLine();
-        addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", false);
-        addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", false);
-        addDataLog("Robot Heading", Status.currentHeading + "°", false);
-        addDataLog("Logging to file", Status.loggingToFile, false);
-
-        addDataLog("BetterIMU Yaw", Status.currentHeading, false); // First angle is the yaw
-        addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), false); // First angle is the yaw
-        addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
-
-        if (!Status.competitionMode) { // Stuff not in competition mode.
+        
+        telemetry.addLine(); // Stuff in both competition and normal mode
+            addDataLog("Alliance", Status.alliance, false);
+        if (Status.competitionMode) { // Stuff in competition mode.
+            telemetry.addLine(); // loop times
+                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
+                addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
+            telemetry.addLine(); // Current Pull
+                addDataLog("Switch Amps", switchCurrent + " A", false);
+            telemetry.addLine(); // Robot Pose
+                addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", false);
+                addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", false);
+                addDataLog("Robot Heading", Status.currentHeading, false);
+            telemetry.addLine(); // Robot Headings
+                addDataLog("BetterIMU Yaw", HardwareDevices.betterIMU.getAngle(), false); // First angle is the yaw
+                addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), false); // First angle is the yaw
+                addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
+        } else { // Stuff not in competition mode.
             // Get current and voltage for telemetry
                 controlHubVoltage = HardwareDevices.controlHub.getInputVoltage(VoltageUnit.VOLTS);
                 expansionHubVoltage = HardwareDevices.expansionHub.getInputVoltage(VoltageUnit.VOLTS);
@@ -598,17 +602,21 @@ public class RobotContainer {
             telemetry.addLine(); // Position & Heading
                 addDataLog("Robot Heading", Status.currentHeading, false);
                 addDataLog("Robot Position", Status.currentPose, false);
+                addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
+                addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), false);
                 addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), false);
                 addDataLog("Better IMU Heading", HardwareDevices.betterIMU.getAngle(), false);
-                addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), false);
             telemetry.addLine(); // Loop Times
                 addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", false);
                 addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", false);
+                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
+                addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
             telemetry.addLine(); // General Info
                 addDataLog("Start Position", Status.startingPose, false);
                 addDataLog("Field Oriented", Status.fieldOriented, false);
                 addDataLog("Goal Position", Status.goalPose, false);
                 addDataLog("Distance to Goal", HelperFunctions.disToGoal(), false);
+                addDataLog("Logging to file", Status.loggingToFile, false);
             telemetry.addLine(); // Individual Power Draw
                 // Intake
                 addDataLog("Intake Total Current", intake.getCurrent(), false);
@@ -628,7 +636,6 @@ public class RobotContainer {
             displayEventTelemetry();
             commitLoopData();
         }
-
         panelsTelemetry.update(telemetry);
         telemetry.update();
     }
