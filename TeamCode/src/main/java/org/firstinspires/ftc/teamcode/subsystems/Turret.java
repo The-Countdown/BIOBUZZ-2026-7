@@ -250,10 +250,6 @@ public class Turret extends RobotContainer.HardwareDevices {
     }
 
     public void pointAtGoal() {
-        if (Status.turretFaceBack) {
-            setTargetAngle(0);
-            return;
-        }
 
         adjustByPosition(!Constants.Turret.ADJUST_TURRET_BY_MULTIPLIER);
 

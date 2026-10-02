@@ -33,7 +33,6 @@ public class HoodTest extends OpMode {
     public void loop() {
         robotContainer.gamepadEx1.update();
         robotContainer.gamepadEx2.update();
-        robotContainer.controlHubVoltage = robotContainer.getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
 
         if (robotContainer.gamepadEx1.cross.wasJustPressed()) {
             currentPosIndex = 0;

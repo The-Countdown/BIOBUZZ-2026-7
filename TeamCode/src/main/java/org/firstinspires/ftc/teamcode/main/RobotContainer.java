@@ -162,7 +162,9 @@ public class RobotContainer {
 
         HardwareDevices.betterIMU.initialize(betterIMUP);
         panelsTelemetry.debug("Calibrating External IMU...");
+        telemetry.addLine("Calibrating External IMU...");
         panelsTelemetry.update(telemetry);
+        telemetry.update();
         Thread.sleep(800); // Ensure that the IMU has some still time so that it will auto calibrate at zero.
 
         HardwareDevices.pinpoint = getHardwareDevice(GoBildaPinpointDriver.class, "pinpoint");
@@ -291,6 +293,11 @@ public class RobotContainer {
 
     public void stop() {
         Status.opModeIsActive = false;
+        if (Status.loggingToFile){
+            writeDataLog();
+            writeEventLog();
+        }
+
         if (this.localizationUpdater != null) {
             this.localizationUpdater.stopThread();
             try {
@@ -331,11 +338,9 @@ public class RobotContainer {
 
         PREV_LOOP_TIME_MS = CURRENT_LOOP_TIME_MS;
 
-        if (teleop) {
-            telemetry("teleOp");
-        }
-
         Status.currentHeading = Constants.System.USE_BETTER_IMU ? HardwareDevices.betterIMU.getAngle() : Status.currentPose.getHeading(AngleUnit.DEGREES);
+
+        updateTelemetry();
     }
 
     /**
@@ -359,49 +364,56 @@ public class RobotContainer {
         ReadWriteFile.writeFile(myFileName, data);
     }
 
+    public void addBlankLine(){
+        telemetry.addLine();
+        panelsTelemetry.addData("","");
+    }
+
     public void addDataLog(String caption, Object data, boolean driveStation) {
         if (driveStation) {
             telemetry.addData(caption, data);
-            panelsTelemetry.addData(caption, data);
+            if(!Status.debugMode) {
+                panelsTelemetry.addData(caption, data);
+            } else {
+                panelsTelemetry.debug(caption, data);
+            }
+
         }
 
-        if (!Status.loggingToFile) {
-            return;
+        if (Status.loggingToFile) {
+            if (data == null) data = "null";
+
+            String dataString = data.toString();
+
+            dataString = dataString.replaceAll(",", "|");
+
+
+            // Add new headers if needed
+            if (!telemetryHeaderList.contains(caption)) {
+                telemetryHeaderList.add(caption);
+                telemetryCache.put(caption, new ArrayList<>());
+            }
+
+            // Put this loop’s value in the buffer
+            currentLoopData.put(caption, dataString);
         }
-
-        if (data == null) data = "null";
-
-        String dataString = data.toString();
-
-        dataString = dataString.replaceAll(",", "|");
-
-
-        // Add new headers if needed
-        if (!telemetryHeaderList.contains(caption)) {
-            telemetryHeaderList.add(caption);
-            telemetryCache.put(caption, new ArrayList<>());
-        }
-
-        // Put this loop’s value in the buffer
-        currentLoopData.put(caption, dataString);
     }
 
     public void commitLoopData() {
-        if (!Status.loggingToFile) {
-            return;
-        }
-        // Determine the current row number
-//        int row = telemetryCache.get(telemetryHeaderList.get(0)).size();
+        if (Status.loggingToFile) {
+            // Determine the current row number
+            int row = telemetryCache.get(telemetryHeaderList.get(0)).size();
 
-        // For every column, add value from buffer or empty string
-        for (String header : telemetryHeaderList) {
-            ArrayList<String> column = telemetryCache.get(header);
-            String value = currentLoopData.getOrDefault(header, "").toString();
-            column.add(value);
-        }
+            // For every column, add value from buffer or empty string
+            for (String header : telemetryHeaderList) {
+                ArrayList<String> column = telemetryCache.get(header);
+                String value = currentLoopData.getOrDefault(header, "").toString();
+                column.add(value);
+            }
 
-        // Clear the buffer for the next loop
-        currentLoopData.clear();
+            // Clear the buffer for the next loop
+            currentLoopData.clear();
+        }
     }
 
     public void writeDataLog() {
@@ -543,29 +555,31 @@ public class RobotContainer {
         return times.getLast();
     }
 
-    public void telemetry(String opMode) {
-        if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_UPDATE_INTERVAL_MS && !Status.competitionMode) {
-            return;
-        } else if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_COMP_UPDATE_INTERVAL_MS && Status.competitionMode) {
-            return;
-        }
+    public void updateTelemetry() {
+//        if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_UPDATE_INTERVAL_MS && !Status.competitionMode) {
+//            return;
+//        } else if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_COMP_UPDATE_INTERVAL_MS && Status.competitionMode) {
+//            return;
+//        }
         // This line is required for the logViwer to work correctly
         // It also need to be at column zero and spelled exactly "Time Stamp"
-        addDataLog("Time Stamp", System.currentTimeMillis() - startTimeMs, false);
+        addDataLog("Time Stamp", System.currentTimeMillis() - startTimeMs, true);
         
-        telemetry.addLine(); // Stuff in both competition and normal mode
-            addDataLog("Alliance", Status.alliance, false);
+        addBlankLine(); // Stuff in both competition and normal mode
+            addDataLog("Alliance", Status.alliance, true);
+            addDataLog("Competition Mode: ", Status.competitionMode, true);
+            addDataLog("Logging to File: ", Status.loggingToFile, true);
         if (Status.competitionMode) { // Stuff in competition mode.
-            telemetry.addLine(); // loop times
+            addBlankLine(); // loop times
                 addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
                 addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
-            telemetry.addLine(); // Current Pull
+            addBlankLine(); // Current Pull
                 addDataLog("Switch Amps", switchCurrent + " A", false);
-            telemetry.addLine(); // Robot Pose
+            addBlankLine(); // Robot Pose
                 addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", false);
                 addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", false);
                 addDataLog("Robot Heading", Status.currentHeading, false);
-            telemetry.addLine(); // Robot Headings
+            addBlankLine(); // Robot Headings
                 addDataLog("BetterIMU Yaw", HardwareDevices.betterIMU.getAngle(), false); // First angle is the yaw
                 addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), false); // First angle is the yaw
                 addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
@@ -576,66 +590,71 @@ public class RobotContainer {
                 controlHubCurrent = HardwareDevices.controlHub.getCurrent(CurrentUnit.AMPS);
                 expansionHubCurrent = HardwareDevices.expansionHub.getCurrent(CurrentUnit.AMPS);
 
-            telemetry.addLine(); // Voltages and Currents MAIN
+            addBlankLine(); // Voltages and Currents MAIN
                 addDataLog("Control Hub Voltage", controlHubVoltage + " V", false);
                 addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", false);
                 addDataLog("Control Hub Current", controlHubCurrent + " A", false);
                 addDataLog("Expansion Hub Current", expansionHubCurrent + " A", false);
                 addDataLog("Switch Amps", switchCurrent + " A", false);
-            telemetry.addLine(); // Flywheel
+            addBlankLine(); // Drivetrain
+                addDataLog("Drivetrain Y Targets", drivetrain.driveTargets[0], true);
+                addDataLog("Drivetrain Y Output", drivetrain.driveOutputs[0], true);
+                addDataLog("Drivetrain X Target", drivetrain.driveTargets[1], true);
+                addDataLog("Drivetrain X Output", drivetrain.driveOutputs[1], true);
+            addBlankLine(); // Flywheel
                 addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, false);
                 addDataLog("Flywheel Leader Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), false);
                 addDataLog("Flywheel Follower Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), false);
                 addDataLog("Flywheel Error", turret.flywheelError, false);
-            telemetry.addLine(); // Turret & Hood
+            addBlankLine(); // Turret & Hood
                 addDataLog("Turret Current Angle", turret.getPositionDegrees(), false);
                 addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), false);
                 addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), false);
                 addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), false);
-            telemetry.addLine(); // Brakes
+            addBlankLine(); // Brakes
                 addDataLog("Brakes position", brakes.getPosition(), false);
                 addDataLog("Brakes angle", brakes.getPositionDegrees(), false);
                 addDataLog("Brakes Servo Leader", HardwareDevices.brakesServoLeader.getPosition(), false);
                 addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), false);
-            telemetry.addLine(); // Lever
+            addBlankLine(); // Lever
                 addDataLog("Lever Open", Status.leverOpen, false);
-            telemetry.addLine(); // Position & Heading
+            addBlankLine(); // Position & Heading
                 addDataLog("Robot Heading", Status.currentHeading, false);
                 addDataLog("Robot Position", Status.currentPose, false);
                 addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
                 addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), false);
                 addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), false);
                 addDataLog("Better IMU Heading", HardwareDevices.betterIMU.getAngle(), false);
-            telemetry.addLine(); // Loop Times
+            addBlankLine(); // Loop Times
                 addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", false);
                 addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", false);
                 addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
                 addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
-            telemetry.addLine(); // General Info
+            addBlankLine(); // General Info
                 addDataLog("Start Position", Status.startingPose, false);
                 addDataLog("Field Oriented", Status.fieldOriented, false);
                 addDataLog("Goal Position", Status.goalPose, false);
                 addDataLog("Distance to Goal", HelperFunctions.disToGoal(), false);
                 addDataLog("Logging to file", Status.loggingToFile, false);
-            telemetry.addLine(); // Individual Power Draw
+            addBlankLine(); // Individual Power Draw
                 // Intake
                 addDataLog("Intake Total Current", intake.getCurrent(), false);
-                addDataLog("Motor Intake Leader", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), false);
-                addDataLog("Motor Intake Follower", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Intake Leader", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Motor Intake Follower", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.AMPS), false);
                 // Flywheel
                 addDataLog("Flywheel Total Current", turret.flywheel.getCurrent(), false);
-                addDataLog("Motor Flywheel Leader", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.MILLIAMPS), false);
-                addDataLog("Motor Flywheel Follower", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.MILLIAMPS), false);
+                addDataLog("Motor Flywheel Leader", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Motor Flywheel Follower", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.AMPS), false);
                 // Drivetrain
-                addDataLog("Drivetrain Total Current", drivetrain.getCurrent(), false);
-                addDataLog("Motor Drive LF Current", HardwareDevices.leftFront.getCurrent(CurrentUnit.MILLIAMPS), false);
-                addDataLog("Motor Drive RF Current", HardwareDevices.rightFront.getCurrent(CurrentUnit.MILLIAMPS), false);
-                addDataLog("Motor Drive LB Current", HardwareDevices.leftBack.getCurrent(CurrentUnit.MILLIAMPS), false);
-                addDataLog("Motor Drive RB Current", HardwareDevices.rightBack.getCurrent(CurrentUnit.MILLIAMPS), false);
-            telemetry.addLine();
+                addDataLog("Drivetrain Total Current", drivetrain.getCurrent(), true);
+                addDataLog("Motor Drive LF Current", HardwareDevices.leftFront.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Motor Drive RF Current", HardwareDevices.rightFront.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Motor Drive LB Current", HardwareDevices.leftBack.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Motor Drive RB Current", HardwareDevices.rightBack.getCurrent(CurrentUnit.AMPS), false);
+            addBlankLine();
             displayEventTelemetry();
-            commitLoopData();
         }
+        commitLoopData();
         panelsTelemetry.update(telemetry);
         telemetry.update();
     }

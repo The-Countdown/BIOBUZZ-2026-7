@@ -24,7 +24,6 @@ public class Brakes extends RobotContainer.HardwareDevices {
             if (robotContainer.gamepadEx1.dpadDown.wasJustPressed()) {
                 Status.parkingBrake = !Status.parkingBrake;
                 if (Status.parkingBrake) {
-                    Status.turretFaceBack = true;
                     robotContainer.delayedActionManager.schedule(() -> targetPosition = Constants.Brakes.EXTENDED, 250);
                     robotContainer.delayedActionManager.schedule(() -> robotContainer.brakes.setPosition(targetPosition), 250);
                 }

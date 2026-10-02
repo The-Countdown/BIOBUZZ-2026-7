@@ -39,7 +39,6 @@ public class MotorTest extends OpMode {
     public void loop() {
         robotContainer.gamepadEx1.update();
         robotContainer.gamepadEx2.update();
-        robotContainer.controlHubVoltage = robotContainer.getVoltage(Constants.Robot.CONTROL_HUB_INDEX);
 
         switch(motorIndex) {
             case -1:

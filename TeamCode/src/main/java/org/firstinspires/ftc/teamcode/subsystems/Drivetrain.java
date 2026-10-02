@@ -15,9 +15,9 @@ public class Drivetrain {
     private final BetterDcMotor leftBack;
     private final BetterDcMotor rightBack;
     private double lastTime;
-    private double[] outputs = {0,0};
-    private double[] targets = {0,0};
-    private double[] lastOutputs = {0,0};
+    public double[] driveOutputs = {0,0};
+    public double[] driveTargets = {0,0};
+    public double[] lastDriveOutputs = {0,0};
 
 
     public Drivetrain(RobotContainer robotContainer, BetterDcMotor leftFront, BetterDcMotor rightFront, BetterDcMotor leftBack, BetterDcMotor rightBack) {
@@ -59,21 +59,21 @@ public class Drivetrain {
         double maxAcceleration = dt * Constants.Control.MAX_DRIVE_ACCELERATION;
 
         for (int i = 0; i < 2; i++){
-            targets[i] = i == 0 ? y : x;
-            double powerError = targets[i] - lastOutputs[i];
-            if (Math.signum(powerError) == Math.signum(targets[i]) && Math.signum(targets[i]) != 0) {
+            driveTargets[i] = i == 0 ? y : x;
+            double powerError = driveTargets[i] - lastDriveOutputs[i];
+            if (Math.signum(powerError) == Math.signum(driveTargets[i]) && Math.signum(driveTargets[i]) != 0) {
                 double delta = Math.copySign(Math.min(Math.abs(powerError), maxAcceleration), powerError);
-                outputs[i] += delta;
+                driveOutputs[i] += delta;
             } else {
-                outputs[i] = targets[i];
+                driveOutputs[i] = driveTargets[i];
             }
         }
 
-        y = outputs[0];
-        x = outputs[1];
+        y = driveOutputs[0];
+        x = driveOutputs[1];
 
         lastTime = currentTime;
-        lastOutputs = outputs;
+        lastDriveOutputs = driveOutputs;
 
         double rx = joystickRotationScaler(robotContainer.gamepadEx1.rightStickX()) * currentMultiplier;
 
@@ -121,13 +121,6 @@ public class Drivetrain {
             rightFront.setPower(rightFrontPower);
             leftBack.setPower(leftBackPower);
             rightBack.setPower(rightBackPower);
-
-        if (!Status.competitionMode){
-            robotContainer.panelsTelemetry.addData("Y Targets", targets[0]);
-            robotContainer.panelsTelemetry.addData("Y Output", outputs[0]);
-            robotContainer.panelsTelemetry.addData("X Target", targets[1]);
-            robotContainer.panelsTelemetry.addData("X Output", outputs[1]);
-        }
     }
 
     /**
@@ -149,6 +142,6 @@ public class Drivetrain {
     }
 
     public double getCurrent(){
-        return leftBack.getCurrent(CurrentUnit.MILLIAMPS) + leftFront.getCurrent(CurrentUnit.MILLIAMPS) + rightFront.getCurrent(CurrentUnit.MILLIAMPS) + rightBack.getCurrent(CurrentUnit.MILLIAMPS);
+        return leftBack.getCurrent(CurrentUnit.AMPS) + leftFront.getCurrent(CurrentUnit.AMPS) + rightFront.getCurrent(CurrentUnit.AMPS) + rightBack.getCurrent(CurrentUnit.AMPS);
     }
 }
