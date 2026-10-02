@@ -364,6 +364,11 @@ public class RobotContainer {
         ReadWriteFile.writeFile(myFileName, data);
     }
 
+    public void addCaptionLine(String caption){
+        telemetry.addLine(caption);
+        panelsTelemetry.addLine(caption);
+    }
+
     public void addBlankLine(){
         telemetry.addLine();
         panelsTelemetry.addData("","");
@@ -556,102 +561,139 @@ public class RobotContainer {
     }
 
     public void updateTelemetry() {
-//        if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_UPDATE_INTERVAL_MS && !Status.competitionMode) {
-//            return;
-//        } else if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_COMP_UPDATE_INTERVAL_MS && Status.competitionMode) {
-//            return;
-//        }
+        if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_UPDATE_INTERVAL_MS && !Status.competitionMode) {
+            return;
+        } else if (telemetryLoopTimer.milliseconds() < Constants.System.TELEMETRY_COMP_UPDATE_INTERVAL_MS && Status.competitionMode) {
+            return;
+        }
         // This line is required for the logViwer to work correctly
         // It also need to be at column zero and spelled exactly "Time Stamp"
         addDataLog("Time Stamp", System.currentTimeMillis() - startTimeMs, true);
-        
-        addBlankLine(); // Stuff in both competition and normal mode
+        addBlankLine();
+
+        addCaptionLine("Match Info");
             addDataLog("Alliance", Status.alliance, true);
             addDataLog("Competition Mode: ", Status.competitionMode, true);
             addDataLog("Logging to File: ", Status.loggingToFile, true);
+        addBlankLine();
+
         if (Status.competitionMode) { // Stuff in competition mode.
-            addBlankLine(); // loop times
+            addCaptionLine("Loop Times");
                 addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
                 addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
-            addBlankLine(); // Current Pull
+            addBlankLine();
+
+            addCaptionLine("Current Pull");
                 addDataLog("Switch Amps", switchCurrent + " A", false);
-            addBlankLine(); // Robot Pose
+            addBlankLine();
+
+            addCaptionLine("Robot Pose");
                 addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", false);
                 addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", false);
                 addDataLog("Robot Heading", Status.currentHeading, false);
-            addBlankLine(); // Robot Headings
+            addBlankLine();
+
+            addCaptionLine("Robot Headings");
                 addDataLog("BetterIMU Yaw", HardwareDevices.betterIMU.getAngle(), false); // First angle is the yaw
                 addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), false); // First angle is the yaw
                 addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
+            addBlankLine();
+
         } else { // Stuff not in competition mode.
+
             // Get current and voltage for telemetry
                 controlHubVoltage = HardwareDevices.controlHub.getInputVoltage(VoltageUnit.VOLTS);
                 expansionHubVoltage = HardwareDevices.expansionHub.getInputVoltage(VoltageUnit.VOLTS);
                 controlHubCurrent = HardwareDevices.controlHub.getCurrent(CurrentUnit.AMPS);
                 expansionHubCurrent = HardwareDevices.expansionHub.getCurrent(CurrentUnit.AMPS);
 
-            addBlankLine(); // Voltages and Currents MAIN
+            addCaptionLine("Voltages and Currents MAIN");
                 addDataLog("Control Hub Voltage", controlHubVoltage + " V", false);
                 addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", false);
                 addDataLog("Control Hub Current", controlHubCurrent + " A", false);
                 addDataLog("Expansion Hub Current", expansionHubCurrent + " A", false);
                 addDataLog("Switch Amps", switchCurrent + " A", false);
-            addBlankLine(); // Drivetrain
-                addDataLog("Drivetrain Y Targets", drivetrain.driveTargets[0], true);
-                addDataLog("Drivetrain Y Output", drivetrain.driveOutputs[0], true);
-                addDataLog("Drivetrain X Target", drivetrain.driveTargets[1], true);
-                addDataLog("Drivetrain X Output", drivetrain.driveOutputs[1], true);
-            addBlankLine(); // Flywheel
-                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, false);
-                addDataLog("Flywheel Leader Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), false);
-                addDataLog("Flywheel Follower Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), false);
-                addDataLog("Flywheel Error", turret.flywheelError, false);
-            addBlankLine(); // Turret & Hood
-                addDataLog("Turret Current Angle", turret.getPositionDegrees(), false);
-                addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), false);
-                addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), false);
-                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), false);
-            addBlankLine(); // Brakes
-                addDataLog("Brakes position", brakes.getPosition(), false);
-                addDataLog("Brakes angle", brakes.getPositionDegrees(), false);
-                addDataLog("Brakes Servo Leader", HardwareDevices.brakesServoLeader.getPosition(), false);
-                addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), false);
-            addBlankLine(); // Lever
-                addDataLog("Lever Open", Status.leverOpen, false);
-            addBlankLine(); // Position & Heading
+            addBlankLine();
+
+            addCaptionLine("Loop Times");
+                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", false);
+                addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", false);
+                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
+                addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
+            addBlankLine();
+
+            addCaptionLine("Position & Heading");
                 addDataLog("Robot Heading", Status.currentHeading, false);
                 addDataLog("Robot Position", Status.currentPose, false);
                 addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
                 addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), false);
                 addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), false);
                 addDataLog("Better IMU Heading", HardwareDevices.betterIMU.getAngle(), false);
-            addBlankLine(); // Loop Times
-                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", false);
-                addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", false);
-                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
-                addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
-            addBlankLine(); // General Info
+            addBlankLine();
+
+            addCaptionLine("General Info");
                 addDataLog("Start Position", Status.startingPose, false);
                 addDataLog("Field Oriented", Status.fieldOriented, false);
                 addDataLog("Goal Position", Status.goalPose, false);
                 addDataLog("Distance to Goal", HelperFunctions.disToGoal(), false);
                 addDataLog("Logging to file", Status.loggingToFile, false);
-            addBlankLine(); // Individual Power Draw
-                // Intake
+            addBlankLine();
+
+            addCaptionLine("Drivetrain");
+                addDataLog("Drivetrain Y Targets", drivetrain.driveTargets[0], true);
+                addDataLog("Drivetrain Y Output", drivetrain.driveOutputs[0], true);
+                addDataLog("Drivetrain X Target", drivetrain.driveTargets[1], true);
+                addDataLog("Drivetrain X Output", drivetrain.driveOutputs[1], true);
+            addBlankLine();
+
+            addCaptionLine("Flywheel");
+                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, false);
+                addDataLog("Flywheel Leader Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), false);
+                addDataLog("Flywheel Follower Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), false);
+                addDataLog("Flywheel Error", turret.flywheelError, false);
+            addBlankLine();
+
+            addCaptionLine("Turret & Hood");
+                addDataLog("Turret Current Angle", turret.getPositionDegrees(), false);
+                addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), false);
+                addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), false);
+                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), false);
+            addBlankLine();
+
+            addCaptionLine("Brakes");
+                addDataLog("Brakes position", brakes.getPosition(), false);
+                addDataLog("Brakes angle", brakes.getPositionDegrees(), false);
+                addDataLog("Brakes Servo Leader", HardwareDevices.brakesServoLeader.getPosition(), false);
+                addDataLog("Brakes Servo Follower", HardwareDevices.brakesServoFollower.getPosition(), false);
+            addBlankLine();
+
+            addCaptionLine("Lever");
+                addDataLog("Lever Open", Status.leverOpen, false);
+            addBlankLine();
+
+            addCaptionLine("Individual Power Draw");
+            addBlankLine();
+
+            addCaptionLine("Intake Power Draw");
                 addDataLog("Intake Total Current", intake.getCurrent(), false);
                 addDataLog("Motor Intake Leader", HardwareDevices.intakeMotorLeader.getCurrent(CurrentUnit.AMPS), false);
                 addDataLog("Motor Intake Follower", HardwareDevices.intakeMotorFollower.getCurrent(CurrentUnit.AMPS), false);
-                // Flywheel
+            addBlankLine();
+
+            addCaptionLine("Flywheel Power Draw");
                 addDataLog("Flywheel Total Current", turret.flywheel.getCurrent(), false);
                 addDataLog("Motor Flywheel Leader", HardwareDevices.flywheelMotorLeader.getCurrent(CurrentUnit.AMPS), false);
                 addDataLog("Motor Flywheel Follower", HardwareDevices.flywheelMotorFollower.getCurrent(CurrentUnit.AMPS), false);
-                // Drivetrain
-                addDataLog("Drivetrain Total Current", drivetrain.getCurrent(), true);
-                addDataLog("Motor Drive LF Current", HardwareDevices.leftFront.getCurrent(CurrentUnit.AMPS), false);
-                addDataLog("Motor Drive RF Current", HardwareDevices.rightFront.getCurrent(CurrentUnit.AMPS), false);
-                addDataLog("Motor Drive LB Current", HardwareDevices.leftBack.getCurrent(CurrentUnit.AMPS), false);
-                addDataLog("Motor Drive RB Current", HardwareDevices.rightBack.getCurrent(CurrentUnit.AMPS), false);
             addBlankLine();
+
+            addCaptionLine("Drivetrain Power Draw");
+                addDataLog("Drivetrain Total Current", drivetrain.getCurrent(), true);
+                addDataLog("Drive Motor LF Current", HardwareDevices.leftFront.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Drive Motor RF Current", HardwareDevices.rightFront.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Drive Motor LB Current", HardwareDevices.leftBack.getCurrent(CurrentUnit.AMPS), false);
+                addDataLog("Drive Motor RB Current", HardwareDevices.rightBack.getCurrent(CurrentUnit.AMPS), false);
+            addBlankLine();
+
             displayEventTelemetry();
         }
         commitLoopData();
