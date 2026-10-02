@@ -579,24 +579,24 @@ public class RobotContainer {
 
         if (Status.competitionMode) { // Stuff in competition mode.
             addCaptionLine("Loop Times");
-                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
-                addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
+                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", true);
+                addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", true);
             addBlankLine();
 
             addCaptionLine("Current Pull");
-                addDataLog("Switch Amps", switchCurrent + " A", false);
+                addDataLog("Switch Amps", switchCurrent + " A", true);
             addBlankLine();
 
             addCaptionLine("Robot Pose");
-                addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", false);
-                addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", false);
-                addDataLog("Robot Heading", Status.currentHeading, false);
+                addDataLog("Pinpoint X", Status.currentPose.getX(DistanceUnit.CM) + " cm", true);
+                addDataLog("Pinpoint Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", true);
+                addDataLog("Robot Heading", Status.currentHeading, true);
             addBlankLine();
 
             addCaptionLine("Robot Headings");
-                addDataLog("BetterIMU Yaw", HardwareDevices.betterIMU.getAngle(), false); // First angle is the yaw
-                addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), false); // First angle is the yaw
-                addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
+                addDataLog("BetterIMU Yaw", HardwareDevices.betterIMU.getAngle(), true); // First angle is the yaw
+                addDataLog("Pinpoint Yaw", HardwareDevices.pinpoint.getHeading(AngleUnit.DEGREES), true); // First angle is the yaw
+                addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, true);
             addBlankLine();
 
         } else { // Stuff not in competition mode.
@@ -612,19 +612,21 @@ public class RobotContainer {
                 addDataLog("Expansion Hub Voltage", expansionHubVoltage + " V", false);
                 addDataLog("Control Hub Current", controlHubCurrent + " A", false);
                 addDataLog("Expansion Hub Current", expansionHubCurrent + " A", false);
-                addDataLog("Switch Amps", switchCurrent + " A", false);
+                addDataLog("Switch Amps", switchCurrent + " A", true);
             addBlankLine();
 
             addCaptionLine("Loop Times");
-                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", false);
+                addDataLog("OpMode Loop Time", getLoopTime("teleOp") + " ms", true);
                 addDataLog("Pinpoint Loop Time", (int) getLoopTime("pinpointUpdater") + " ms", false);
-                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", false);
+                addDataLog("OpMode Avg Loop Time", (int) getRollingAverageLoopTime("teleOp") + " ms", true);
                 addDataLog("Pinpoint Avg Loop Time", (int) getRollingAverageLoopTime("pinpointUpdater") + " ms", false);
             addBlankLine();
 
             addCaptionLine("Position & Heading");
-                addDataLog("Robot Heading", Status.currentHeading, false);
+                addDataLog("Robot Heading", Status.currentHeading, true);
                 addDataLog("Robot Position", Status.currentPose, false);
+                addDataLog("Robot X", Status.currentPose.getX(DistanceUnit.CM) + " cm", true);
+                addDataLog("Robot Y", Status.currentPose.getY(DistanceUnit.CM) + " cm", true);
                 addDataLog("Use Better IMU", Constants.System.USE_BETTER_IMU, false);
                 addDataLog("Pinpoint Status", RobotContainer.HardwareDevices.pinpoint.getDeviceStatus(), false);
                 addDataLog("Pinpoint Heading", RobotContainer.HardwareDevices.pinpoint.getPosition().getHeading(AngleUnit.DEGREES), false);
@@ -635,29 +637,30 @@ public class RobotContainer {
                 addDataLog("Start Position", Status.startingPose, false);
                 addDataLog("Field Oriented", Status.fieldOriented, false);
                 addDataLog("Goal Position", Status.goalPose, false);
-                addDataLog("Distance to Goal", HelperFunctions.disToGoal(), false);
-                addDataLog("Logging to file", Status.loggingToFile, false);
+                addDataLog("Distance to Goal", HelperFunctions.disToGoal(), true);
             addBlankLine();
 
             addCaptionLine("Drivetrain");
-                addDataLog("Drivetrain Y Targets", drivetrain.driveTargets[0], true);
-                addDataLog("Drivetrain Y Output", drivetrain.driveOutputs[0], true);
-                addDataLog("Drivetrain X Target", drivetrain.driveTargets[1], true);
-                addDataLog("Drivetrain X Output", drivetrain.driveOutputs[1], true);
+                addDataLog("Drivetrain Y Targets", drivetrain.driveTargets[0], false);
+                addDataLog("Drivetrain Y Output", drivetrain.driveOutputs[0], false);
+                addDataLog("Drivetrain X Target", drivetrain.driveTargets[1], false);
+                addDataLog("Drivetrain X Output", drivetrain.driveOutputs[1], false);
             addBlankLine();
 
             addCaptionLine("Flywheel");
-                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, false);
+                addDataLog("Flywheel Target Velocity", turret.flywheel.targetVelocity, true);
+                addDataLog("Flywheel Current Velocity", turret.flywheel.getFlywheelVelocity(), true);
+                addDataLog("Flywheel Error", turret.flywheelError, true);
+                addDataLog("Flywheel Toggle", Status.flywheelToggle, true);
                 addDataLog("Flywheel Leader Current Velocity", HardwareDevices.flywheelMotorLeader.getVelocity(), false);
                 addDataLog("Flywheel Follower Current Velocity", HardwareDevices.flywheelMotorFollower.getVelocity(), false);
-                addDataLog("Flywheel Error", turret.flywheelError, false);
             addBlankLine();
 
             addCaptionLine("Turret & Hood");
-                addDataLog("Turret Current Angle", turret.getPositionDegrees(), false);
+                addDataLog("Turret Current Angle", turret.getPositionDegrees(), true);
                 addDataLog("Servo Turret Leader", HardwareDevices.turretServoLeader.getPosition(), false);
                 addDataLog("Servo Turret Follower", HardwareDevices.turretServoFollower.getPosition(), false);
-                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), false);
+                addDataLog("Hood Position", HardwareDevices.hoodServo.getPosition(), true);
             addBlankLine();
 
             addCaptionLine("Brakes");
