@@ -148,7 +148,7 @@ public class Constants {
         public static double FLYWHEEL_GEAR_RATIO = 1;
         public static double[] HOOD_PRESETS = {0.58, 0.7, 0.95};
         public static double[] HOOD_TABLE_DISTANCES = {50, 90, 130};
-        public static double FLYWHEEL_KP = 0.0;
+        public static double FLYWHEEL_KP = 0.001;
         public static double FLYWHEEL_KI = 0.0;
         public static double FLYWHEEL_KD = 0.0;
         public static double FLYWHEEL_KF = 0.0;
