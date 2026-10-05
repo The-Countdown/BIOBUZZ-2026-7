@@ -47,8 +47,6 @@ public class Drivetrain {
 
     public void driveJoystickUpdate() {
 
-        if (Status.parkingBrake){return;}
-
         double current = getCurrent();
         double currentMultiplier = current > 15 ? 14/current : 1;
         double y = joystickScaler(robotContainer.gamepadEx1.leftStickY()) * currentMultiplier;
@@ -76,6 +74,19 @@ public class Drivetrain {
         lastDriveOutputs = driveOutputs;
 
         double rx = joystickRotationScaler(robotContainer.gamepadEx1.rightStickX()) * currentMultiplier;
+
+        if (Status.parkingBrake){
+            double leftPower = y - rx;
+            double rightPower = y + rx;
+
+            leftFront.setPower(leftPower);
+            leftBack.setPower(leftPower);
+
+            rightFront.setPower(rightPower);
+            rightBack.setPower(rightPower);
+
+            return;
+        }
 
         double denominator;
         double leftFrontPower;
